@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/../main.rb"
+require File.dirname(__FILE__) + "/spec_helper"
 
 describe 'initial game state' do
   before do
@@ -27,6 +27,36 @@ describe 'game' do
   it 'playing a card adds to pool' do
     @side.play(hand.first)
     @side.played.pool.runes.should == 1
+  end
+end
+
+describe 'ability' do
+  describe 'banish' do
+    before do
+      @game = Game.new
+      @side = Side.new(:game => @game)
+      @game.sides << @side
+      @game.center.fill!
+      stub(Ability::BanishChoice).chooser do
+        lambda { |c| c.options.first }
+      end
+      @card = @game.center.first
+      
+      Ability::BanishCenter.new.call(@side)
+    end
+    it 'should be gone from center' do
+      @game.center.should_not be_include(@card)
+    end
+    it 'should be in void' do
+      @game.void.should be_include(@card)
+    end
+    it 'deck should be one less' do
+      @game.deck.size.should == 93
+    end
+    it 'center should be full' do
+      @game.center.size.should == 6
+    end
+    
   end
 end
 
