@@ -23,8 +23,8 @@ module Event
     def [](i)
       events[i]
     end
-    def cond?(*args)
-      true
+    def cond?(&b)
+      events.any?(&b)
     end
   end
   

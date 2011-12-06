@@ -10,7 +10,7 @@ module Parse
     fattr(:words) { {} }
     def reg_word(word,&b)
       words[word.to_s] = b
-      words["first_#{word}"] - lambda do |event|
+      words["first_#{word}"] = lambda do |event|
         b.call(event) && event.first
       end
     end
@@ -18,23 +18,15 @@ module Parse
   
   class Word
     include FromHash
-    attr_accessor :raw, :realm, :type
+    attr_accessor :raw
     def self.parsed(ops)
-      new(ops).tap { |x| x.parse! }
+      new(ops)
     end
-    fattr(:without_first) do
-      raw.to_s.gsub(/^first_/,"")
+    fattr(:word_blk) do
+      Words.instance.words[raw.to_s] || (raise "no block for #{raw}")
     end
-    def first?
-      raw.to_s =~ /^first_/
-    end
-    def parse!
-      if without_first =~ /^(.+)_hero_played$/
-        self.realm = $1
-        self.type = "hero_played"
-      else
-        raise without_first
-      end
+    def occured?(side)
+      side.events.cond?(&word_blk)
     end
   end
   
@@ -74,7 +66,10 @@ module Parse
     class On < Base
       fattr(:trigger) do
         lambda do |event, side|
-          if after_word.realm.to_s == event.card.realm.to_s
+          #if after_word.realm.to_s == event.card.realm.to_s
+          #  send(category, side)
+          #end
+          if after_word.word_blk[event]
             send(category, side)
           end
         end
@@ -89,5 +84,5 @@ module Parse
 end
 
 Parse.reg_word :lifebound_hero_played do |event|
-  event.kind_of?(Event::HeroPlayed) && event.card.realm == :lifebound
+  event.kind_of?(Event::CardPlayed) && event.card.realm.to_s == 'lifebound'
 end
