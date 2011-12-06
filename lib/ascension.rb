@@ -13,6 +13,12 @@ class Object
   end
 end
 
+class Events
+  def fire(event)
+    
+  end
+end
+
 class Game
   fattr(:sides) { [] }
   fattr(:center) { Center.new(:game => self) }
@@ -60,13 +66,13 @@ class Side
   def total_cards
     [hand,played,deck,discard].map { |x| x.size }.sum
   end
+  
+  fattr(:events) { Event::Events.new(:side => self) }
+  def fire_event(event)
+    events << event
+  end
 end
 
-class Pool
-  fattr(:runes) { 0 }
-  fattr(:power) { 0 }
-end
-
-%w(card cards ability).each do |f|
+%w(card cards ability pool events parse).each do |f|
   require File.dirname(__FILE__) + "/ascension/#{f}"
 end

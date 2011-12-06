@@ -163,4 +163,75 @@ describe 'all' do
     end
   end
   
+  describe 'events outer' do
+    before do
+      @trigger = lambda do |event, side|
+        if event.first
+          side.honor += 1
+        end
+      end
+      @side.constructs << Card::Construct.new(:triggers => [@trigger])
+      
+      @side.played << Card::Hero.apprentice
+    end
+    it 'should add honor' do
+      @side.honor.should == 1
+    end
+  end
+  
+
+  
+end
+
+describe 'pool' do
+  before do
+    @pool = Pool.new(:runes => 3, :mechana_runes => 1)
+    @mechana_card = Card::Construct.new(:realm => :mechana, :rune_cost => 3)
+    @normal_card = Card::Construct.new(:realm => :lifebound, :rune_cost => 3)
+    @big_card = Card::Construct.new(:rune_cost => 8)
+  end
+  describe 'purchase mechana' do
+    before do
+      @pool.deplete_runes(@mechana_card)
+    end
+    it 'should use mechana runes' do
+      @pool.mechana_runes.should == 0
+    end
+    it 'should leave std rune' do
+      @pool.runes.should == 1
+    end
+  end
+  describe 'purchase normal' do
+    before do
+      @pool.deplete_runes(@normal_card)
+    end
+    it 'should leave mechana runes' do
+      @pool.mechana_runes.should == 1
+    end
+    it 'should use all std runes' do
+      @pool.runes.should == 0
+    end
+  end
+  describe "can't purchase" do
+    it 'should error' do
+      lambda { @pool.deplete_runes(@big_card) }.should raise_error
+    end
+  end
+end
+
+describe 'basic events' do
+  before do
+    @events = Event::Events.new
+    @card = Card::Hero.apprentice
+    @event = Event::CardPlayed.new(:card => @card)
+    @events << @event.clone
+    @events << @event.clone
+  end
+  it 'event 1 should have first marked' do
+    @events[0].first.should == true
+  end
+  it 'event 2 should not have first marked' do
+    puts @events.events.map { |x| x.first }.inspect
+    @events[1].first.should == false
+  end
 end

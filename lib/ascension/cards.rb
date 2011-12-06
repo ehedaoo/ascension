@@ -80,6 +80,8 @@ class Played < Cards
     super
     apply(card)
     
+    side.fire_event(Event::CardPlayed.new(:card => card))
+    
     if card.kind_of?(Card::Construct)
       remove(card)
       side.constructs << card

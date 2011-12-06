@@ -11,16 +11,23 @@ module Card
     include FromHash
     include HonorEarned
     fattr(:abilities) { [] }
+    fattr(:triggers) { [] }
     attr_accessor :name
     def apply_abilities(side)
       abilities.each { |a| a.call(side) }
+    end
+    def apply_triggers(event, side)
+      triggers.each { |a| a.call(event, side) }
     end
   end
   
   class Purchaseable < Base
     fattr(:runes) { 0 }
     fattr(:power) { 0 }
-    attr_accessor :rune_cost
+    attr_accessor :rune_cost, :realm
+    def mechana?
+      realm == :mechana
+    end
   end
   
   class Hero < Purchaseable
