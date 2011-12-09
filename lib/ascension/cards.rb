@@ -38,6 +38,15 @@ class Cards
     remove(card)
     game.void << card
   end
+  def []=(i,card)
+    cards[i] = card
+  end
+  def [](i)
+    cards[i]
+  end
+  def to_s_cards
+    map { |x| x.name }.join(" | ")
+  end
 end
 
 class Discard < Cards; end
@@ -54,7 +63,9 @@ class PlayerDeck < Cards
   end
   def self.starting(ops={})
     res = new(ops)
-    10.times { res << Card::Hero.apprentice }
+    8.times { res << Card::Hero.apprentice }
+    2.times { res << Card::Hero.militia }
+    res.shuffle!
     res
   end
 end
@@ -112,11 +123,16 @@ class Center < Cards
   end
 end
 
+class CenterWithConstants
+  
+end
+
 class CenterDeck < Cards
   class << self
     def starting
       res = new
-      100.times { res << Card::Hero.standin }
+      Parse::InputFile.new.cards.each { |c| res << c }
+      res.shuffle!
       res
     end
   end
@@ -125,5 +141,9 @@ end
 class Constructs < Cards
   def apply!
     each { |c| side.played.apply(c) }
+  end
+  def discard(card)
+    remove(card)
+    side.discard << card
   end
 end

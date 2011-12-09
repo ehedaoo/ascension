@@ -92,22 +92,130 @@ describe 'phrase' do
         @card = Card::Hero.new(:realm => :lifebound)
         @event = Event::CardPlayed.new(:card => @card)
       
-        @phrase = Parse::Phrase.parsed("1 if lifebound_hero_played")
+        @phrase = Parse::Phrase.parsed("1 if lifebound_hero_played").tap { |x| x.category = :add_honor }
       end
-      describe 'hero played' do
-        before do
-          @side.events << @event
-        end
-        it 'should be true' do
-          @phrase.after_word.should be_occured(@side)
-        end
-      end
-      describe 'hero not played' do
-        it 'should be true' do
-          @phrase.after_word.should_not be_occured(@side)
-        end
+      
+      it 'foo' do
+        @phrase.mod_card(@card)
+        @card.abilities.size.should == 1
+        
+        @side.events << @event
+        
+        @card.apply_abilities(@side)
+        @side.honor.should == 1
       end
     end
+  end
+  
+  describe 'Card' do
+    before do
+      @side = Side.new
+      @first_card = Card::Hero.new(:realm => :lifebound)
+      @parse_card = Parse::Card.new(:rune_cost => 2, :honor_given => "1 if lifebound_hero_played", :runes => "1")
+    end
+    it 'should make card - smoke' do
+      @parse_card.card
+    end
+    it 'card should add honor' do
+      @side.played << @first_card
+      @side.played << @parse_card.card
+      @side.honor.should == 1
+    end
+    it 'card should not add honor' do
+      @side.played << @parse_card.card
+      @side.honor.should == 0
+    end
+    it 'card gives 1 rune' do
+      @side.played << @parse_card.card
+      @side.played.pool.runes.should == 1
+    end
+    it 'card gives 1 mech rune' do
+      @parse_card.runes = "1 for mechana"
+      @side.played << @parse_card.card
+      @side.played.pool.mechana_runes.should == 1
+    end
+    it 'card gives 1 normal, 1 mech rune' do
+      @parse_card.runes = "1,1 for mechana"
+      @side.played << @parse_card.card
+      @side.played.pool.runes.should == 1
+      @side.played.pool.mechana_runes.should == 1
+    end
+    it 'draws 1' do
+      @parse_card.draw = "1"
+      @side.played << @parse_card.card
+      @side.hand.size.should == 1
+    end
+    it 'draws 1 cond' do
+      @parse_card.draw = "1 if two_or_more_constructs"
+      @side.played << @parse_card.card
+      @side.hand.size.should == 0
+    end
+    it 'draws 1 cond' do
+      @parse_card.draw = "1 if two_or_more_constructs"
+      stub(@side.constructs).size { 2 }
+      @side.played << @parse_card.card
+      @side.hand.size.should == 1
+    end
+  end
+  
+  describe 'banish' do
+    before do
+      @game, @side = *new_game_with_side
+      @game.center.fill!
+      
+      @card = @game.center.first
+      
+      @parse_card = Parse::Card.new(:banish_center => "1")
+    end
+    it 'should banish a card' do
+      stub(Ability::CardChoice).chooser do
+        lambda { |c| c.options.first }
+      end
+      
+      @game.void.size.should == 0
+      @parse_card.card.apply_abilities(@side)
+      @game.void.size.should == 1
+    end
+    it 'should not banish a card' do
+      @parse_card.banish_center = "o1"
+      stub(Ability::CardChoice).chooser do
+        lambda { |c| nil }
+      end
+      
+      @game.void.size.should == 0
+      @parse_card.card.apply_abilities(@side)
+      @game.void.size.should == 0
+    end
+  end
+  
+  describe 'kill monster' do
+    before do
+      @game, @side = *new_game_with_side
+      @game.center << Card::Monster.cultist
+      @parse_card = Parse::Card.new(:special_abilities => "kill_monster_4")
+    end
+    it 'should add ability' do
+      @parse_card.card.abilities.size.should == 1
+    end
+    it 'ability should kill' do
+      stub(Ability::CardChoice).chooser do
+        lambda { |c| c.options.first }
+      end
+      @parse_card.card.apply_abilities(@side)
+      @side.honor.should == 1
+    end
+  end
+end
+
+describe 'input file' do
+  before do
+    @file = Parse::InputFile.new
+  end
+  it 'smoke' do
+    @file.lines.size.should == 48
+  end
+  it 'smoke2' do
+    @file.cards.size.should == 100
   end
 end
 

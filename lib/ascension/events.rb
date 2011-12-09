@@ -45,6 +45,14 @@ module Event
       [realm,card_type]
     end
   end
+  
+  class MonsterKilled < Base
+    attr_accessor :card
+    fattr(:center) { false }
+    def key
+      [center]
+    end
+  end
 end
 
 class Trigger

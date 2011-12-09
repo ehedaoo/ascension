@@ -46,15 +46,21 @@ class Side
     played << card
     hand.remove(card)
   end
-  def purchase(card)
+  def acquire_free(card)
     discard << card
     game.center.remove(card)
-    card.apply_abilities(self)
+  end
+  def purchase(card)
+    acquire_free(card)
+    #card.apply_abilities(self)
     played.pool.runes -= card.rune_cost
   end
   def defeat(monster)
     game.void << monster
     game.center.remove(monster)
+    
+    fire_event Event::MonsterKilled.new(:card => monster, :center => true)
+    
     monster.apply_abilities(self)
     played.pool.power -= monster.power_cost
   end
@@ -70,6 +76,14 @@ class Side
   fattr(:events) { Event::Events.new(:side => self) }
   def fire_event(event)
     events << event
+  end
+  def other_side
+    game.sides.reject { |x| x == self }.first
+  end
+  def print_status!
+    puts "Center " + game.center.to_s_cards
+    puts "Hand " + hand.to_s_cards
+    puts "Pool " + played.pool.to_s
   end
 end
 

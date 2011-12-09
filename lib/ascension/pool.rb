@@ -23,4 +23,7 @@ class Pool
     end
     raise "not enough runes" if remaining > 0
   end
+  def to_s
+    "#{runes} (#{mechana_runes}) / #{power}"
+  end
 end

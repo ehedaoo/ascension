@@ -10,14 +10,27 @@ module Card
   class Base
     include FromHash
     include HonorEarned
+    
+    # abilities are things that happen when a card is put into play or defeated
+    # abilities can be conditional on whether other things have already happened
     fattr(:abilities) { [] }
+    
+    # triggers are things than happen when external events occur.  
     fattr(:triggers) { [] }
+    
     attr_accessor :name
     def apply_abilities(side)
       abilities.each { |a| a.call(side) }
     end
     def apply_triggers(event, side)
       triggers.each { |a| a.call(event, side) }
+    end
+    
+    def monster?; kind_of?(Monster); end
+    def hero?; kind_of?(Hero); end
+    
+    def to_s
+      name
     end
   end
   
@@ -34,6 +47,9 @@ module Card
     class << self
       def apprentice
         new(:runes => 1, :name => "Apprentice")
+      end
+      def militia
+        new(:power => 1, :name => 'Militia')
       end
       def heavy_infantry
         new(:power => 2, :name => "Heavy Infantry")
@@ -59,6 +75,7 @@ module Card
 
   class Monster < Base
     attr_accessor :power_cost
+    fattr(:runes) { 0 }
     class << self
       def cultist
         new(:power_cost => 2, :name => "Cultist", :honor_earned => 1)
