@@ -74,8 +74,8 @@ module Parse
       def trigger; nil; end
       def ability; nil; end
       def mod_card(card)
-        card.triggers << trigger if trigger
-        card.abilities << ability if ability
+        card.triggers << trigger.tap { |x| x.optional = optional if x.respond_to?('optional=') } if trigger
+        card.abilities << ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } if ability
       end
       
       def add_honor(side)
@@ -146,8 +146,8 @@ module Parse
       attr_accessor *args
     end
     input_field :rune_cost, :honor_given, :power, :runes, :draw
-    input_field :banish_center
-    input_field :special_abilities, :realm, :name, :honor
+    input_field :banish_center, :banish_hand_discard
+    input_field :special_abilities, :realm, :name, :honor, :power_cost
     fattr(:card_class) do
       ::Card::Hero
     end
@@ -163,7 +163,7 @@ module Parse
       end
     end
     fattr(:card) do
-      res = card_class.new(:name => name)
+      res = card_class.new(:name => name, :realm => realm)
       
       mod_for_phrases(runes, :runes, res)
       mod_for_phrases(honor_given,:add_honor,res)
@@ -171,11 +171,15 @@ module Parse
       mod_for_phrases(draw, :draw_cards, res)
       
       mod_for_phrases(banish_center, Ability::BanishCenter, res)
+      mod_for_phrases(banish_hand_discard, Ability::BanishHandDiscard, res)
       
       if special_abilities
         word = Word.parsed(:raw => special_abilities)
         res.abilities << word.word_blk
       end
+      
+      res.power_cost = power_cost.to_i if res.monster?
+      res.rune_cost = rune_cost.to_i unless res.monster?
       
       res
     end
@@ -198,7 +202,7 @@ module Parse
       %w(card_class realm).each do |f|
         card.send("#{f}=",send(f))
       end
-      %w(name rune_cost honor runes power draw banish_center special_abilities).each do |f|
+      %w(name rune_cost honor runes power power_cost draw banish_center banish_hand_discard special_abilities).each do |f|
         card.send("#{f}=",raw[f])
       end
       card

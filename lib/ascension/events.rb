@@ -53,6 +53,19 @@ module Event
       [center]
     end
   end
+  
+  class CardPurchased < Base
+    attr_accessor :card
+    def realm
+      card.realm
+    end
+    def card_type
+      card.class
+    end
+    def key
+      [realm,card_type]
+    end
+  end
 end
 
 class Trigger

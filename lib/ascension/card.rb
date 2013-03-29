@@ -10,6 +10,7 @@ module Card
   class Base
     include FromHash
     include HonorEarned
+    attr_accessor :realm
     
     # abilities are things that happen when a card is put into play or defeated
     # abilities can be conditional on whether other things have already happened
@@ -28,6 +29,7 @@ module Card
     
     def monster?; kind_of?(Monster); end
     def hero?; kind_of?(Hero); end
+    def construct?; kind_of?(Construct); end
     
     def to_s
       name
@@ -37,7 +39,7 @@ module Card
   class Purchaseable < Base
     fattr(:runes) { 0 }
     fattr(:power) { 0 }
-    attr_accessor :rune_cost, :realm
+    attr_accessor :rune_cost
     def mechana?
       realm == :mechana
     end
@@ -48,11 +50,14 @@ module Card
       def apprentice
         new(:runes => 1, :name => "Apprentice")
       end
+      def mystic
+        new(:runes => 2, :name => 'Mystic', :rune_cost => 3)
+      end
       def militia
         new(:power => 1, :name => 'Militia')
       end
       def heavy_infantry
-        new(:power => 2, :name => "Heavy Infantry")
+        new(:power => 2, :name => "Heavy Infantry", :rune_cost => 2)
       end
       def standin
         new(:rune_cost => 2, :name => "Standin")
@@ -79,6 +84,12 @@ module Card
     class << self
       def cultist
         new(:power_cost => 2, :name => "Cultist", :honor_earned => 1)
+      end
+      def cultist_standin
+        new(:power_cost => 2, :name => "Cultist Standin", :honor_earned => 1)
+      end
+      def cultist_standin2
+        new(:power_cost => 2, :name => "Cultist Standin2", :honor_earned => 1)
       end
     end
   end

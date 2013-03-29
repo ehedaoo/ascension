@@ -8,6 +8,7 @@ class Cards
     cards << c
   end
   def remove(c)
+    raise "#{c} not here" unless cards.include?(c)
     self.cards -= [c]
   end
   def each(&b)
@@ -47,6 +48,12 @@ class Cards
   def to_s_cards
     map { |x| x.name }.join(" | ")
   end
+  def get_one(name)
+    res = find { |x| x.name == name }
+    raise "couldn't find #{name}" unless res
+    self.cards -= [res]
+    res
+  end
 end
 
 class Discard < Cards; end
@@ -72,7 +79,9 @@ end
 
 class Hand < Cards
   def play_all!
-    each { |c| side.play(c) }
+    while size > 0
+      side.play(first)
+    end
   end
   def discard!
     each { |c| side.discard << c }
@@ -123,8 +132,25 @@ class Center < Cards
   end
 end
 
-class CenterWithConstants
-  
+class CenterWithConstants < Cards
+  attr_accessor :game
+  include FromHash
+  fattr(:constant_cards) do
+    [Card::Hero.mystic,Card::Hero.heavy_infantry,Card::Monster.cultist]
+  end
+  def cards
+    game.center.cards + constant_cards
+  end
+  def size
+    cards.size
+  end
+  def remove(card)
+    return nil if constant_cards.map { |x| x.name }.include?(card.name)
+    game.center.remove(card)
+  end
+  def method_missing(sym,*args,&b)
+    game.center.send(sym,*args,&b)
+  end
 end
 
 class CenterDeck < Cards

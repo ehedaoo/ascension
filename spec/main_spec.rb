@@ -1,5 +1,11 @@
 require File.dirname(__FILE__) + "/spec_helper"
 
+class Array
+  def safe_find(&b)
+    find(&b).tap { |x| raise 'foo' unless x }
+  end
+end
+
 describe 'initial game state' do
   before do
     @game = Game.new
@@ -63,12 +69,12 @@ describe 'ability' do
       @game = Game.new
       @side = Side.new(:game => @game)
       @game.sides << @side
-      @game.deck[-1] = Card::Monster.cultist
-      @game.deck[-2] = Card::Monster.cultist
+      @game.deck[-1] = Card::Monster.cultist_standin
+      @game.deck[-2] = Card::Monster.cultist_standin2
       @game.deck[-2].power_cost = 5
       @game.center.fill!
       stub(Ability::CardChoice).chooser do
-        lambda { |c| c.options.first }
+        lambda { |c| c.options.safe_find { |x| x.base_obj.name == 'Cultist Standin' } }
       end
       @card = @game.center.first
     end
@@ -77,6 +83,7 @@ describe 'ability' do
         @choice = Ability::KillMonster.new.call(@side)
       end
       it 'should be gone from center' do
+        #raise @game.center.map { |x| x.name }.inspect
         @game.center.should_not be_include(@card)
       end
       it 'should be in void' do
@@ -92,7 +99,7 @@ describe 'ability' do
         @side.honor.should == @card.honor_earned
       end
       it 'should have 2 options' do
-        @choice.choosable_cards.size.should == 2
+        @choice.choosable_cards.size.should == 3
       end
     end
     describe "power constraint" do
@@ -100,7 +107,7 @@ describe 'ability' do
         @choice = Ability::KillMonster.new(:max_power => 4).call(@side)
       end
       it 'should have 1 option' do
-        @choice.choosable_cards.size.should == 1
+        @choice.choosable_cards.size.should == 2
       end
     end
   end
@@ -134,7 +141,7 @@ describe 'ability' do
         @game.center.size.should == 6
       end
       it 'should have 6 options' do
-        @choice.choosable_cards.size.should == 6
+        @choice.choosable_cards.size.should == 8
       end
     end
     describe "rune constraint" do
@@ -142,7 +149,7 @@ describe 'ability' do
         @choice = Ability::AcquireHero.new(:max_rune_cost => 4).call(@side)
       end
       it 'should have 5 options' do
-        @choice.choosable_cards.size.should == 5
+        @choice.choosable_cards.size.should == 7
       end
     end
   end
@@ -225,6 +232,15 @@ describe 'all' do
     @side = Side.new(:game => @game)
     @game.sides << @side
   end
+  
+  describe 'center with constants' do
+    before do
+      @game.center.fill!
+    end
+    it 'size test' do
+      @game.center_wc.size.should == 9
+    end
+  end
 
   describe 'buying cards' do
     before do
@@ -279,7 +295,7 @@ describe 'all' do
     before do
       @side.played << Card::Hero.heavy_infantry
       @side.played.pool.power.should == 2
-      @side.defeat(Card::Monster.cultist)
+      @side.defeat(Card::Monster.cultist_standin)
     end
     it 'should deplete pool' do
       @side.played.pool.power.should == 0

@@ -25,6 +25,7 @@ class Game
   fattr(:void) { Void.new }
   fattr(:honor) { 60 }
   fattr(:deck) { CenterDeck.starting }
+  fattr(:center_wc) { CenterWithConstants.new(:game => self) }
 end
 
 class Side
@@ -48,7 +49,8 @@ class Side
   end
   def acquire_free(card)
     discard << card
-    game.center.remove(card)
+    game.center_wc.remove(card)
+    fire_event Event::CardPurchased.new(:card => card)
   end
   def purchase(card)
     acquire_free(card)
@@ -57,7 +59,7 @@ class Side
   end
   def defeat(monster)
     game.void << monster
-    game.center.remove(monster)
+    game.center.remove(monster) unless monster.name =~ /cultist/i && !game.center.include?(monster)
     
     fire_event Event::MonsterKilled.new(:card => monster, :center => true)
     
@@ -67,7 +69,9 @@ class Side
   def end_turn!
     played.discard!
     hand.discard!
+    constructs.apply!
     draw_hand!
+    
   end
   def total_cards
     [hand,played,deck,discard].map { |x| x.size }.sum
@@ -83,6 +87,8 @@ class Side
   def print_status!
     puts "Center " + game.center.to_s_cards
     puts "Hand " + hand.to_s_cards
+    puts "Played " + played.to_s_cards
+    puts "Constructs " + constructs.to_s_cards unless constructs.empty?
     puts "Pool " + played.pool.to_s
   end
 end
