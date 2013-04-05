@@ -1,5 +1,6 @@
 class Pool
   include FromHash
+  setup_mongo_persist :runes, :mechana_runes, :construct_runes, :power
   fattr(:runes) { 0 }
   fattr(:mechana_runes) { 0 }
   fattr(:construct_runes) { 0 }

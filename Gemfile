@@ -22,5 +22,16 @@ group :development do
 end
 
 gem 'mharris_ext'
-gem 'rchoice','0.2.0'
+gem "rchoice", :path => '/code/orig/rchoice'
+#gem "rchoice", :path => "/users/mharris717/gems/rchoice-0.2.0"
+#gem 'rchoice','0.2.0'
 #gem 'rchoice', :git => "git@github.com:mharris717/rchoice.git", :branch => "gemdir"
+
+gem "mongo_persist", :path => "/code/orig/mongo_persist"
+gem 'andand'
+
+gem 'activesupport'
+gem 'bson_ext'
+gem 'mongo_scope'
+gem 'mongo'
+gem 'sinatra'

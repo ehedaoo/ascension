@@ -47,3 +47,29 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+task :environment do
+  load "lib/ascension.rb"
+end
+
+task :dump_game => :environment do
+  require 'json'
+  obj = Game.collection.find.to_a[0]
+  str = obj.to_json
+  File.create "vol/game.json",str
+
+  require 'pp'
+
+  File.open("vol/game_pp.json","w") do |f|
+    PP.pp(obj,f)
+  end
+end
+
+task :reset_game => :environment do
+  Game.collection.remove
+  Game.reset!
+  puts Game.collection.find_one_object.mongo_id
+end
+
+
+

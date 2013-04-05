@@ -1,7 +1,7 @@
 require 'rubygems'
-require 'lib/ascension'
+load File.dirname(__FILE__) + '/../ascension.rb'
 
-Ability::CardChoice.chooser = Choice::CommandLineChooser.new
+Ability::CardChoice.chooser = RChoice::CommandLineChooser.new
 
 game = Game.new
 side = Side.new(:game => game)

@@ -6,6 +6,12 @@ module Parse
     ability ||= b
     Words.instance.reg_word(word) { |side| ability.call(side) }
   end
+  def self.cards
+    @cards ||= InputFile.new.cards
+  end
+  def self.get(name)
+    cards.find { |x| x.name == name }.tap { |x| raise "no card #{name}" unless x }
+  end
   
   class Words
     class << self
@@ -102,7 +108,7 @@ module Parse
             draw_cards(side)
           end
         elsif category.kind_of?(Class)
-          card.abilities << category.new(:optional => optional)
+          card.abilities << category.new(:optional => optional, :parent_card => card)
         else
           raise "unknown category #{category}"
         end
@@ -214,10 +220,10 @@ module Parse
   
   class InputFile
     fattr(:raw_lines) do
-      require 'fastercsv'
+      require 'csv'
       res = []
       f = File.expand_path(File.dirname(__FILE__)) + "/cards.csv"
-      FasterCSV.foreach(f,:headers => true, :row_sep => "\n", :quote_char => '"') do |row|
+      CSV.foreach(f,:headers => true, :row_sep => "\n", :quote_char => '"') do |row|
         h = {}
         row.each do |k,v|
           #puts [k,v].inspect

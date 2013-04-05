@@ -31,7 +31,8 @@ describe 'game' do
     @side.hand.size.should == 5
   end
   it 'playing a card adds to pool' do
-    @side.play(hand.first)
+    card = hand.find { |x| x.runes == 1 }
+    @side.play(card)
     @side.played.pool.runes.should == 1
   end
 end
