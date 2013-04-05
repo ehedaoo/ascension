@@ -26,6 +26,8 @@ Gem::Specification.new do |s|
     "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
+    "VERSION",
+    "ascension.gemspec",
     "lib/ascension.rb",
     "lib/ascension/Ascension-statistics_v1.csv",
     "lib/ascension/ability.rb",
