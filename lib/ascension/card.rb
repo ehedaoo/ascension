@@ -6,10 +6,19 @@ module Card
       self.abilities << Ability::EarnHonor.new(:honor => h)
     end
   end
-  
+
+  class << self
+    def dummy
+      Base.new(:name => "Dummy")
+    end
+  end
+
   class Base
     include FromHash
     include HonorEarned
+
+    setup_mongo_persist :realm, :name, :card_id
+
     attr_accessor :realm
     
     # abilities are things that happen when a card is put into play or defeated
@@ -18,10 +27,22 @@ module Card
     
     # triggers are things than happen when external events occur.  
     fattr(:triggers) { [] }
+
+    fattr(:card_id) { rand(10000000000000) }
     
     attr_accessor :name
     def apply_abilities(side)
-      abilities.each { |a| a.call(side) }
+      if playing_on_command_line?
+        abilities.each { |a| a.call(side) }
+      else
+        abilities.each do |a|
+          if a.respond_to?(:choice_instance)
+            a.choice_instance(side).save!
+          else
+            a.call(side)
+          end
+        end
+      end
     end
     def apply_triggers(event, side)
       triggers.each { |a| a.call(event, side) }
@@ -34,9 +55,24 @@ module Card
     def to_s
       name
     end
+
+    def basic_card?
+      ["Heavy Infantry","Mystic","Cultist","Apprentice","Militia","Standin"].include?(name)
+    end
+
+    def hydrated
+      return self if basic_card?
+      res = Parse.get(name).clone
+      res.card_id = card_id
+      res
+    end
+
+
   end
   
   class Purchaseable < Base
+    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id
+
     fattr(:runes) { 0 }
     fattr(:power) { 0 }
     attr_accessor :rune_cost
@@ -80,6 +116,7 @@ module Card
 
   class Monster < Base
     attr_accessor :power_cost
+    setup_mongo_persist :realm, :name, :power_cost, :card_id
     fattr(:runes) { 0 }
     class << self
       def cultist

@@ -1,7 +1,50 @@
+str = <<EOF
+Card
+  Ability
+    CardChoice
+      RChoice
+EOF
+
 module Ability
+  class ChoiceInstance
+    include FromHash
+    attr_accessor :choice, :side
+
+    setup_mongo_persist :choice, :choice_id
+    def addl_json_attributes
+      %w(choosable_cards name)
+    end
+    def name
+      choice.class.to_s
+    end
+
+    fattr(:choice_id) { rand(100000000000000) }
+
+    fattr(:choosable_cards) do
+      res = choice.choosable_cards(side)
+      res = res.cards if res.respond_to?(:cards)
+      res
+    end
+    def save!
+      side.choices << self
+    end
+
+    def execute!(chosen_card)
+      choice.action(chosen_card,side)
+      delete!
+    end
+
+    def delete!
+      side.choices -= [self]
+    end
+  end
+
+
   class Base
     fattr(:optional) { false }
     include FromHash
+    attr_accessor :parent_card
+    setup_mongo_persist :parent_card
     def call_until_nil(side)
       loop do
         choice = call(side)
@@ -9,11 +52,20 @@ module Ability
         return unless choice.choice.chosen_option && choosable_cards(side).size > 0
       end
     end
+    def choice_instance(side)
+      ChoiceInstance.new(:choice => self, :side => side)
+    end
   end
   
   class BaseChoice < Base
+    def side_for_card_choice(side)
+      side
+    end
+    def card_choice(side)
+      CardChoice.new(:ability => self, :side => side_for_card_choice(side))
+    end
     def call(side)
-      CardChoice.new(:ability => self, :side => side).tap { |x| x.run! }
+      card_choice(side).tap { |x| x.run! }
     end
   end
   
@@ -27,7 +79,7 @@ module Ability
       fattr(:chooser) {}
     end
     fattr(:choice) do
-      res = Choice::Choice.new(:optional => ability.optional, :name => ability.klass.to_s)
+      res = RChoice::Choice.new(:optional => ability.optional, :name => ability.klass.to_s, :parent_obj => self)
       choosable_cards.each do |card|
         res.add_option card
       end
@@ -41,12 +93,12 @@ module Ability
   end
 
   class Banish < BaseChoice
-    def action(card,side)
-      side.game.center.banish(card)
-    end
   end
   
   class BanishCenter < Banish
+    def action(card,side)
+      side.game.center.banish(card)
+    end
     def choosable_cards(side)
       side.game.center
     end
@@ -130,11 +182,14 @@ module Ability
       side.played.apply(card)
     end
   end
-  
-  class DiscardConstruct < BaseChoice
-    def call(side)
-      CardChoice.new(:ability => self, :side => side.other_side).tap { |x| x.run! }
+
+  class OtherSideChoice < BaseChoice
+    def side_for_card_choice(side)
+      side.other_side
     end
+  end
+  
+  class DiscardConstruct < OtherSideChoice
     def choosable_cards(side)
       side.constructs
     end
@@ -143,10 +198,7 @@ module Ability
     end
   end
   
-  class KeepOneConstruct < BaseChoice
-    def call(side)
-      CardChoice.new(:ability => self, :side => side.other_side).tap { |x| x.run! }
-    end
+  class KeepOneConstruct < OtherSideChoice
     def choosable_cards(side)
       side.constructs
     end
@@ -159,9 +211,6 @@ module Ability
   end
   
   class TakeOpponentsCard < BaseChoice
-    def call(side)
-      CardChoice.new(:ability => self, :side => side).tap { |x| x.run! }
-    end
     def choosable_cards(side)
       side.other_side.hand
     end

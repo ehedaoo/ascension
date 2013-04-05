@@ -1,6 +1,7 @@
 class Cards
   include FromHash
   include Enumerable
+  setup_mongo_persist :cards
   attr_accessor :side, :game
   fattr(:game) { side.game }
   fattr(:cards) { [] }
@@ -29,6 +30,9 @@ class Cards
   def pop
     cards.pop
   end
+  def index(obj)
+    cards.index(obj)
+  end
   def clear!
     self.cards = []
   end
@@ -53,6 +57,9 @@ class Cards
     raise "couldn't find #{name}" unless res
     self.cards -= [res]
     res
+  end
+  def hydrate!
+    self.cards = map { |x| x.hydrated }
   end
 end
 
@@ -90,11 +97,12 @@ class Hand < Cards
 end
 
 class Played < Cards
+  setup_mongo_persist :cards, :pool
   fattr(:pool) { Pool.new }
   def apply(card)
-    card.apply_abilities(side)
     pool.runes += card.runes
     pool.power += card.power
+    card.apply_abilities(side)
   end
   def <<(card)
     super
@@ -116,14 +124,36 @@ end
 
 class Void < Cards; end
 
+module Selectable
+  def engageable_cards(side)
+    select { |x| can?(x,side) }
+  end
+  def can?(card,side)
+    if card.monster?
+      raise card.name unless card.power_cost
+      side.played.pool.power >= card.power_cost
+    else
+      side.played.pool.can_purchase?(card)
+    end
+  end
+end
+
 class Center < Cards
   def fill!
+    (0...size).each do |i|
+      if self[i].name == 'Dummy'
+        self[i] = game.deck.pop
+      end
+    end
+
     while size < 6
       self << game.deck.pop
     end
   end
-  def remove(card)
-    super
+  def remove(c)
+    raise "#{c} not here" unless include?(c)
+    i = index(c)
+    self[i] = Card.dummy
     fill!
   end
   def banish(card)
@@ -135,6 +165,7 @@ end
 class CenterWithConstants < Cards
   attr_accessor :game
   include FromHash
+  include Selectable
   fattr(:constant_cards) do
     [Card::Hero.mystic,Card::Hero.heavy_infantry,Card::Monster.cultist]
   end
