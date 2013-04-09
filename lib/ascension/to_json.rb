@@ -63,6 +63,19 @@ class Array
   end
 end
 
+class TrueClass
+  def as_json(*args)
+    self
+  end
+end
+
+class FalseClass
+  def as_json(*args)
+    self
+  end
+end
+
+
 class Class
   def setup_mongo_persist(*attrs)
     include MongoPersist

@@ -15,7 +15,10 @@ module Event
       propagate(event)
     end
     def propagate(event)
-      side.constructs.each { |c| c.apply_triggers(event,side) } if side
+      if side
+        side.constructs.each { |c| c.apply_triggers(event,side) } 
+        #side.played.each { |c| c.apply_triggers(event,side) }
+      end
     end
     def first?(event)
       events.select { |x| x.key == event.key && x.class == event.class }.empty?#.tap { |x| puts "first? #{x}" }

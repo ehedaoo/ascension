@@ -40,6 +40,7 @@ end
 
 Spork.each_run do
   load File.dirname(__FILE__) + "/../lib/ascension.rb"
+  Parse.reset!
 
   def db
     Mongo::Connection.new.db('ascension-test')
@@ -70,4 +71,5 @@ def new_game_with_sides
   [game,side]
 end
 
-
+issues = "
+buying something with reactor monk subtracts one too many runes"

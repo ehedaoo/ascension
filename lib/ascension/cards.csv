@@ -1,4 +1,4 @@
-"Realm Short","Card Type","Name","count","rune_cost","power_cost","honor","runes","honor","power","+C","draw","banish_center","banish_hand","banish_discard","banish_hand_discard","discard_from_hand","special_abilities","triggerable_ability","undefined"
+"Realm Short","Card Type","Name","count","rune_cost","power_cost","honor","runes","honor_given","power","+C","draw","banish_center","banish_hand","banish_discard","banish_hand_discard","discard_from_hand","special_abilities","triggerable_ability","undefined"
 "V","H","Void Initiate",3,1,,1,1,,,1,,,,,"o1",,,,
 "V","H","Spike Vixen",2,2,,1,,,1,1,1,,,,,,,,
 "V","H","Shade ot Black Watch",3,3,,1,,,2,1,,,,,"o1",,,,
@@ -15,7 +15,7 @@
 "E","H","Arha Templar",2,4,,3,,,,,,,,,,,"kill_monster_4",,
 "E","H","Ascetic of the Lidless Eye",2,5,,2,,,,2,2,,,,,,,,
 "E","C","Tablet of Times Dawn",1,5,,2,,,,,,,,,,,,,
-"E","C","The All Seeing Eye",1,6,,2,,,,1,,,,,,,,"draw_1",
+"E","C","The All Seeing Eye",1,6,,2,,,,1,,,,,,,,"draw: 1",
 "E","H","Oziah the Peerless",1,6,,3,,,,,,,,,,,"kill_monster_6",,
 "E","H","Master Dhartha",1,7,,3,,,,3,3,,,,,,,,
 "L","H","Lifeblood Initiate",3,1,,1,1,1,,,,,,,,,,,
@@ -38,12 +38,12 @@
 "M","C","Hedron Link Device",1,7,,7,,,,,,,,,,,,,"all_mechana"
 "M","C","Hedron Cannon",1,8,,8,,,,,,,,,,,,"power_for_mechana",
 "S","M","Samael's Trickster",4,,3,,1,1,,,,,,,,,,,
-"S","M","Tormented Soul",3,,3,,,1,,1,,,,,,,,,
+"S","M","Tormented Soul",3,,3,,,1,,1,1,,,,,,,,
 "S","M","Mephit",3,,3,,,2,,,,"o1",,,,,,,
-"S","M","Corrosive Widow",4,,4,,,3,,,,,,,,,"discard_construct",,
+"S","M","Corrosive Widow",4,,4,,,3,,,,,,,,,"other_side-discard_construct",,
 "S","M","Mistake of Creation",4,,4,,,4,,1,,"o1",,"o1",,,,,
 "S","M","Wind Tyrant",3,,5,,3,3,,,,,,,,,,,
-"S","M","Sea Tyrant",3,,5,,,5,,,,,,,,,"discard_all_but_one_construct",,
+"S","M","Sea Tyrant",3,,5,,,5,,,,,,,,,"other_side-discard_all_but_one_construct",,
 "S","M","Earth Tyrant",2,,6,,,5,,2,2,,,,,,,,
 "S","M","Xeron Duke of Lies",1,,6,,,3,,,,,,,,,"take_opponents_card",,
 "S","M","Avatar ot Fallen",1,,7,,,4,,,,,,,,,"acquire_center",,

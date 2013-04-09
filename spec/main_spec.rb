@@ -274,6 +274,7 @@ describe 'all' do
       @side.draw_hand!
       @side.hand.play_all!
       @side.end_turn!
+
     end
     it 'should discard when done' do
       @side.discard.size.should == 5
@@ -284,6 +285,7 @@ describe 'all' do
       @side.played.pool.runes.should == 0
     end
     it 'drawing from empty deck' do
+      @side.played.pool.runes += 1000
       @side.purchase(@game.center.first)
       @side.end_turn!
       @side.total_cards.should == 11

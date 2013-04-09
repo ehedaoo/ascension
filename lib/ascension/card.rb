@@ -32,6 +32,9 @@ module Card
     
     attr_accessor :name
     def apply_abilities(side)
+      abilities = self.abilities
+      abilities = abilities.reverse if name == 'Temple Librarian'
+
       if playing_on_command_line?
         abilities.each { |a| a.call(side) }
       else
@@ -39,6 +42,7 @@ module Card
           if a.respond_to?(:choice_instance)
             a.choice_instance(side).save!
           else
+            #raise a.inspect
             a.call(side)
           end
         end

@@ -12,10 +12,13 @@ module Ability
 
     setup_mongo_persist :choice, :choice_id
     def addl_json_attributes
-      %w(choosable_cards name)
+      %w(choosable_cards name optional)
     end
     def name
       choice.class.to_s
+    end
+    fattr(:optional) do
+      choice.optional
     end
 
     fattr(:choice_id) { rand(100000000000000) }
@@ -25,12 +28,29 @@ module Ability
       res = res.cards if res.respond_to?(:cards)
       res
     end
+    def needs_decision?
+      choice.respond_to?(:choosable_cards)# && choosable_cards.size > 0
+    end
     def save!
-      side.choices << self
+      if needs_decision?
+        if choice.kind_of?(Ability::KeepOneConstruct)
+          #puts "this side is #{side.side_id} other is #{side.other_side.side_id}"
+        end
+        side.choices << self
+      else
+        #raise choice.inspect
+        choice.call(side)
+      end
     end
 
     def execute!(chosen_card)
-      choice.action(chosen_card,side)
+      if chosen_card
+        choice.action(chosen_card,side)
+      elsif choice.optional
+        # do nothing  
+      else
+        raise "has to make a choice"
+      end
       delete!
     end
 
@@ -41,10 +61,13 @@ module Ability
 
 
   class Base
+    def side_for_card_choice(side)
+      side
+    end
     fattr(:optional) { false }
     include FromHash
     attr_accessor :parent_card
-    setup_mongo_persist :parent_card
+    setup_mongo_persist :parent_card, :optional
     def call_until_nil(side)
       loop do
         choice = call(side)
@@ -53,7 +76,7 @@ module Ability
       end
     end
     def choice_instance(side)
-      ChoiceInstance.new(:choice => self, :side => side)
+      ChoiceInstance.new(:choice => self, :side => side_for_card_choice(side))
     end
   end
   
@@ -116,6 +139,24 @@ module Ability
       side.hand.cards + side.discard.cards
     end
   end
+
+  class BanishHand < Banish
+    def action(card,side)
+      side.hand.banish(card)
+    end
+    def choosable_cards(side)
+      side.hand.cards
+    end
+  end
+
+  class DiscardFromHand < Banish
+    def action(card,side)
+      side.hand.discard(card)
+    end
+    def choosable_cards(side)
+      side.hand.cards
+    end
+  end
   
   class EarnHonor < Base
     attr_accessor :honor
@@ -170,13 +211,25 @@ module Ability
       side.game.center_wc.select { |x| x.hero? && x.rune_cost <= (max_rune_cost||99) }
     end
     def action(card,side)
-      side.purchase(card)
+      side.acquire_free(card)
+    end
+  end
+
+  class AcquireCenter < BaseChoice
+    #attr_accessor :max_rune_cost
+    def choosable_cards(side)
+      #side.game.center_wc.select { |x| x.hero? }.each { |x| puts [x.name,x.rune_cost].inspect }
+      side.game.center.cards
+    end
+    def action(card,side)
+      side.engage_free(card)
     end
   end
   
   class CopyHero < BaseChoice
     def choosable_cards(side)
-      side.played
+      res = side.played.select { |x| x }
+      #raise res.inspect
     end
     def action(card,side)
       side.played.apply(card)

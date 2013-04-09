@@ -34,6 +34,18 @@ describe "card" do
       end
     end
 
+    describe "basic" do
+      let(:game) { unsaved_game }
+      let(:side) { unsaved_side }
+      let(:librarian) { Parse.get("Temple Librarian") }
+
+
+      it "has abilities" do
+        librarian.abilities.size.should == 2
+        #raise librarian.abilities.inspect
+      end
+    end
+
     if true
       describe "after save" do
         let(:game) do

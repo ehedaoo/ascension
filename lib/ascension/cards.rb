@@ -94,26 +94,33 @@ class Hand < Cards
     each { |c| side.discard << c }
     clear!
   end
+  def discard(card)
+    remove(card)
+    side.discard << card
+  end
 end
 
 class Played < Cards
   setup_mongo_persist :cards, :pool
   fattr(:pool) { Pool.new }
   def apply(card)
+    card.apply_abilities(side)
     pool.runes += card.runes
     pool.power += card.power
-    card.apply_abilities(side)
+    
   end
   def <<(card)
     super
     apply(card)
     
-    side.fire_event(Event::CardPlayed.new(:card => card))
+    
     
     if card.kind_of?(Card::Construct)
       remove(card)
       side.constructs << card
     end
+
+    side.fire_event(Event::CardPlayed.new(:card => card))
   end
   def discard!
     each { |c| side.discard << c }

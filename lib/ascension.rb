@@ -110,6 +110,8 @@ class Game
       #side.deck << game.deck.get_one('Temple Librarian')
       #side.deck[-1] = Card::Hero.arha
 
+      side.deck << Parse.get("Temple Librarian")
+
       #side.deck << Parse.get("Shade ot Black Watch")
       #side.deck << Parse.get("Seer of the Forked Path")
       #side.deck << Parse.get("Demon Slayer")
@@ -156,22 +158,35 @@ class Side
   def purchase(card)
     acquire_free(card)
     #card.apply_abilities(self)
-    played.pool.runes -= card.rune_cost
+    #played.pool.runes -= card.rune_cost
+    played.pool.deplete_runes(card)
   end
   def defeat(monster)
+    defeat_free(monster)
+    played.pool.power -= monster.power_cost
+  end
+  def defeat_free(monster)
     game.void << monster
     game.center.remove(monster) unless monster.name =~ /cultist/i && !game.center.include?(monster)
     
     fire_event Event::MonsterKilled.new(:card => monster, :center => true)
     
+    played.pool.runes += monster.runes
     monster.apply_abilities(self)
-    played.pool.power -= monster.power_cost
   end
   def engage(card)
+    #debugger if $mega_debugger
     if card.monster?
       defeat(card)
     else
       purchase(card)
+    end
+  end
+  def engage_free(card)
+    if card.monster?
+      defeat_free(card)
+    else
+      acquire_free(card)
     end
   end
   def engageable_cards
@@ -193,7 +208,11 @@ class Side
     events << event
   end
   def other_side
-    game.sides.reject { |x| x == self }.first
+    res = game.sides.reject { |x| x.side_id == side_id }
+    raise "bad" unless res.size == 1
+    res = res.first
+    puts "in other side, this side is #{side_id} and other side is #{res.side_id}"
+    res
   end
   def print_status!
     puts "Center " + game.center.to_s_cards

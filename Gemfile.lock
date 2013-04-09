@@ -1,9 +1,13 @@
 PATH
   remote: /code/orig/mongo_persist
   specs:
-    mongo_persist (0.0.1)
+    mongo_persist (0.2.0)
       activesupport
-      fattr
+      andand
+      bson_ext
+      mharris_ext
+      mongo
+      mongo_scope
 
 PATH
   remote: /code/orig/rchoice
