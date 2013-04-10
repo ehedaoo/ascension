@@ -16,6 +16,8 @@ group :development do
   gem 'guard-rspec'
   gem 'guard-spork'
 
+  gem 'rb-fsevent', '~> 0.9'
+
   gem 'lre'
 
   gem 'rr'
@@ -35,4 +37,5 @@ gem 'bson_ext'
 gem 'mongo_scope'
 gem 'mongo'
 gem 'sinatra'
+
 

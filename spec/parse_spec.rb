@@ -177,7 +177,7 @@ describe 'phrase' do
       @game.void.size.should == 1
     end
     it 'should not banish a card' do
-      @parse_card.banish_center = "o1"
+      @parse_card.banish_center = "optional-1"
       stub(Ability::CardChoice).chooser do
         lambda { |c| nil }
       end

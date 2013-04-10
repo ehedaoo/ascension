@@ -33,6 +33,18 @@ class Events
   end
 end
 
+class Debug
+  class << self
+    def log(*args)
+      #puts args.join(",")
+      File.append "debug.log","#{args.first}\n"
+    end
+    def clear!
+      File.create("debug.log","Starting Log at #{Time.now}\n")
+    end
+  end
+end
+
 class Game
   setup_mongo_persist :sides, :center, :void, :honor, :deck, :turn_manager
   def addl_json_attributes
@@ -63,7 +75,7 @@ class Game
   def card_places
     places = [deck,center,void]
     sides.each do |side|
-      places += [side.hand,side.discard,side.deck,side.played]
+      places += [side.hand,side.discard,side.deck,side.played,side.constructs]
     end
     places
   end
@@ -197,6 +209,8 @@ class Side
     hand.discard!
     constructs.apply!
     draw_hand!
+
+    fire_event Event::EndTurn.new
     
   end
   def total_cards
@@ -211,8 +225,12 @@ class Side
     res = game.sides.reject { |x| x.side_id == side_id }
     raise "bad" unless res.size == 1
     res = res.first
-    puts "in other side, this side is #{side_id} and other side is #{res.side_id}"
+    #puts "in other side, this side is #{side_id} and other side is #{res.side_id}"
     res
+  end
+  def gain_honor(num)
+    self.honor += num
+    game.honor -= num if game
   end
   def print_status!
     puts "Center " + game.center.to_s_cards

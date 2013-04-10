@@ -6,6 +6,12 @@ class Array
   end
 end
 
+describe 'stuff' do
+  it 'addition' do
+    2.should == 2
+  end
+end
+
 describe 'initial game state' do
   before do
     @game = Game.new

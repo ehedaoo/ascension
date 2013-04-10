@@ -14,7 +14,10 @@ module Parse
     @card = nil
   end
   def self.get(name)
-    cards.find { |x| x.name == name }.tap { |x| raise "no card #{name}" unless x }
+    res = cards.find { |x| x.name == name }.tap { |x| raise "no card #{name}" unless x }
+    raise "invoked_ability" if res.respond_to?(:invoked_ability) && res.invoked_ability
+    res.invoked_ability = false if res.respond_to?(:invoked_ability)
+    res.clone
   end
   
   class Words
@@ -60,7 +63,7 @@ module Parse
       end
     end
     def occured?(side)
-      side = side.other_side if modifier == "other_side"
+      #side = side.other_side if modifier == "other_side"
       if word_blk.arity == 1
         side.events.cond?(&word_blk)
       else
@@ -89,25 +92,28 @@ module Parse
     class Base
       include FromHash
       attr_accessor :raw, :category
-      fattr(:before_clause_raw) { raw.split(" ").first }
-      fattr(:before_clause) do
-        if other_side
-          before_clause_raw[11..-1]
-        elsif optional
-          before_clause_raw[1..-1]
+
+      fattr(:modifier) do
+        a = raw.split("-")
+        if a.size > 1
+          a.first
         else
-          before_clause_raw
+          nil
         end
+      end
+      fattr(:raw_no_modifier) do
+        raw.split("-").last
+      end
+
+      fattr(:before_clause_raw) do
+        raw_no_modifier.split(" ").first 
+      end
+      fattr(:before_clause) do
+        before_clause_raw
         #before_clause_raw[0..0] == 'o' ? before_clause_raw[1..-1] : before_clause_raw
       end
       fattr(:optional) do
-        before_clause_raw[0..0] == 'o' && !other_side
-      end
-      fattr(:other_side) do
-        #raise "in other side"
-        res = before_clause_raw.to_s =~ /other_side/
-        raise "got other side" if res
-        res
+        modifier == 'optional'
       end
       fattr(:after_clause) { raw.split(" ").last }
       fattr(:after_word) do
@@ -115,19 +121,31 @@ module Parse
       end
       def trigger; nil; end
       def ability; nil; end
+
+      def abilities_target(card)
+        (modifier == "invokable") ? card.invokable_abilities : card.abilities
+      end
+
       def mod_card(card)
         card.triggers << trigger.tap { |x| x.optional = optional if x.respond_to?('optional=') } if trigger
-        card.abilities << ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } if ability
+
+        if ability
+          abilities_target(card) << ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } 
+        end
+        #card.invokable_abilities << invokable_ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } if invokable_ability
       end
       
-      def add_honor(side)
-        side.honor += before_clause.to_i
+      def add_honor(side,num=before_clause)
+        #side.honor += before_clause.to_i
+        #side.game.honor
+
+        side.gain_honor num.to_i
       end
-      def add_power(side)
-        side.played.pool.power += before_clause.to_i
+      def add_power(side,num=before_clause)
+        side.played.pool.power += num.to_i
       end
-      def draw_cards(side)
-        before_clause.to_i.times do
+      def draw_cards(side,num=before_clause)
+        num.to_i.times do
           side.draw_one!
         end
       end
@@ -143,7 +161,7 @@ module Parse
           #raise "in honor part"
           card.honor_earned = before_clause.to_i
         elsif category == :draw_cards
-          card.abilities << lambda do |side|
+          abilities_target(card) << lambda do |side|
             draw_cards(side)
           end
         elsif category.kind_of?(Class)
@@ -153,7 +171,7 @@ module Parse
         end
       end
     end
-    
+
     class On < Base
       fattr(:trigger) do
         lambda do |event, side|
@@ -174,6 +192,7 @@ module Parse
       end
     end
     
+    # signifies that the reward is only good FOR a certain thing
     class For < Base
       fattr(:ability) do
         lambda do |side|
@@ -185,14 +204,15 @@ module Parse
     end
 
     class Foreach < Base
+
       fattr(:ability) do
-        raise "bad" unless after_clause == "type_of_construct"
+        #raise "bad" unless after_clause == "type_of_construct"
         #cnt = side.constructs.map { |x| x.realm }.uniq.size
         #Ability::EarnHonor.new(:honor => cnt)
+
         lambda do |side|
-          cnt = side.constructs.map { |x| x.realm }.uniq.size
-          side.honor += cnt
-          side.game.honor -= cnt
+          cnt = after_word.word_blk[side]
+          send(category,side,cnt)
         end
       end
     end
@@ -210,17 +230,23 @@ module Parse
     fattr(:card_class) do
       ::Card::Hero
     end
-    def phrase(raw, cat)
+    def make_parsed_phrase_obj(raw, cat)
       return nil unless raw
       #return nil if raw =~ /foreach/
       Phrase.parsed(raw).tap { |x| x.category = cat }
     end
-    def mod_for_phrases(raw, cat, card)
-      return unless raw
+
+    # Raw Cell is the text from the csv file for this column
+    # 
+    # method_name_or_ability_class is one of two things:
+    # 1. the symbol for the method to call for this column
+    # 2. The Class that represents this ability
+    def mod_for_phrases(raw_cell, method_name_or_ability_class, card_to_setup)
+      return unless raw_cell
       #puts [raw,cat,card_class,name].inspect
-      raw.split(",").each do |r|
-        p = phrase(r,cat)
-        p.mod_card(card) if p
+      raw_cell.split(",").each do |raw_cell_part|
+        p = make_parsed_phrase_obj(raw_cell_part,method_name_or_ability_class)
+        p.mod_card(card_to_setup) if p
       end
     end
     fattr(:card) do
@@ -323,6 +349,14 @@ end
 
 Parse.reg_word :two_or_more_constructs do |side,junk|
   side.constructs.size >= 2
+end
+
+Parse.reg_word :count_of_mechana_constructs do |side,*args|
+  side.constructs.select { |x| x.mechana? }.size
+end
+
+Parse.reg_word :type_of_construct do |side,*args|
+  side.constructs.map { |x| x.realm }.uniq.size
 end
 
 (2..6).each do |i|

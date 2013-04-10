@@ -18,6 +18,12 @@ module JsonPersist
   rescue
     return h
   end
+  def full_addl_json_attributes
+    res = []
+    res += addl_json_attributes if respond_to?(:addl_json_attributes)
+    res += self.class.full_addl_json_attributes if self.class.respond_to?(:full_addl_json_attributes)
+    res.flatten.uniq
+  end
   def to_json_hash
     res = mongo_child_attributes.inject({}) do |h,attr| 
       obj = send(attr)
@@ -30,10 +36,10 @@ module JsonPersist
     end
 
     if respond_to?(:addl_json_attributes) && true
-      puts "in addl_json_attributes part"
-      addl = [addl_json_attributes].flatten.select { |x| x }
+      #puts "in addl_json_attributes part"
+      addl = [full_addl_json_attributes].flatten.select { |x| x }
       addl.each do |attr|
-        puts "addl attr #{attr}"
+        #puts "addl attr #{attr}"
         res = new_hash_json(attr,res,send(attr))
       end
     end
@@ -41,6 +47,20 @@ module JsonPersist
   end
   def to_json(*args)
     as_json(*args).to_json
+  end
+
+  module ClassMethods
+    def full_addl_json_attributes
+      res = []
+      res += addl_json_attributes if respond_to?(:addl_json_attributes)
+      res += superclass.full_addl_json_attributes if superclass.respond_to?(:full_addl_json_attributes)
+      res.flatten.uniq
+    end
+  end
+
+  def self.included(mod)
+    super
+    mod.send(:extend,ClassMethods)
   end
 end
 

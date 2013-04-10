@@ -19,6 +19,8 @@ module Card
 
     setup_mongo_persist :realm, :name, :card_id
 
+
+
     attr_accessor :realm
     
     # abilities are things that happen when a card is put into play or defeated
@@ -27,6 +29,8 @@ module Card
     
     # triggers are things than happen when external events occur.  
     fattr(:triggers) { [] }
+
+    
 
     fattr(:card_id) { rand(10000000000000) }
     
@@ -47,10 +51,13 @@ module Card
           end
         end
       end
+
+      
     end
     def apply_triggers(event, side)
       triggers.each { |a| a.call(event, side) }
     end
+    
     
     def monster?; kind_of?(Monster); end
     def hero?; kind_of?(Hero); end
@@ -66,8 +73,19 @@ module Card
 
     def hydrated
       return self if basic_card?
-      res = Parse.get(name).clone
-      res.card_id = card_id
+      parsed = Parse.get(name).clone
+
+      %w(abilities triggers invokable_abilities).each do |m|
+        self.send("#{m}=",parsed.send(m)) if parsed.respond_to?(m)
+      end
+      #res.card_id = card_id
+      #res
+      self
+    end
+
+    def clone
+      res = super
+      res.card_id!
       res
     end
 
@@ -111,10 +129,49 @@ module Card
   end
   
   class Construct < Purchaseable
+    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :invoked_ability
     class << self
       def shadow_star
         new(:power => 1)
       end
+    end
+
+    fattr(:invokable_abilities) { [] }
+    fattr(:invoked_ability) { false }
+
+    def has_invokable_ability
+      invokable_abilities.size > 0 && !invoked_ability
+    end
+    def addl_json_attributes
+      ["has_invokable_ability"]
+    end
+
+    def handle_event(event,side)
+      apply_triggers(event,side)
+      if event.key == [:end_turn]
+        self.invoked_ability = false
+      end
+    end
+
+    def invoked_ability=(val)
+      str = "Setting invoked_ability to #{val} on #{card_id}"
+      Debug.log str
+
+      @invoked_ability = val
+    end
+
+    def invoke_abilities(side)
+      invokable_abilities.each do |ability|
+        ability.call(side)
+      end
+      self.invoked_ability = true
+    end
+
+    def hydrated
+      #puts "hydrating construct"
+      res = super
+      res.invoked_ability = invoked_ability
+      res
     end
   end
 

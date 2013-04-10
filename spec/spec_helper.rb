@@ -1,6 +1,8 @@
 require 'rubygems'
 require 'spork'
 
+
+
 class Array
   def reduce(*args,&b)
     inject(*args,&b)
@@ -35,11 +37,13 @@ Spork.prefork do
 
   RSpec.configure do |config|
     config.mock_with :rr
+    #config.filter_run :focus => true
   end
 end
 
 Spork.each_run do
   load File.dirname(__FILE__) + "/../lib/ascension.rb"
+  #Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| load f}
   Parse.reset!
 
   def db
@@ -53,6 +57,8 @@ Spork.each_run do
       res
     end
   end
+
+
 end
 
 def new_game_with_side

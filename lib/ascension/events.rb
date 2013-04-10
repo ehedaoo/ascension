@@ -16,7 +16,7 @@ module Event
     end
     def propagate(event)
       if side
-        side.constructs.each { |c| c.apply_triggers(event,side) } 
+        side.constructs.each { |c| c.handle_event(event,side) } 
         #side.played.each { |c| c.apply_triggers(event,side) }
       end
     end
@@ -67,6 +67,12 @@ module Event
     end
     def key
       [realm,card_type]
+    end
+  end
+
+  class EndTurn < Base
+    def key
+      [:end_turn]
     end
   end
 end
