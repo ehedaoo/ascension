@@ -13,6 +13,7 @@ shared_context "game setup" do
   let(:cards_to_engage) { [] }
 
   let(:pool_power) { 0 }
+  let(:pool_runes) { 0 }
 
   let(:game) do
     res = Game.new
@@ -28,6 +29,7 @@ shared_context "game setup" do
     (hand_cards + cards_to_play).uniq.each { |c| res.deck << Parse.get(c) }
     res.draw_hand!
     res.played.pool.power += pool_power
+    res.played.pool.runes += pool_runes
     cards_to_play.each do |name|
       c = res.hand.find { |x| x.name == name } 
       raise "no card #{name}" unless c
@@ -54,8 +56,17 @@ shared_context "game setup" do
     side.choices.first
   end
 
+  def get_card(card)
+    return card unless card.kind_of?(String)
+    game.card_places.each do |cards|
+      res = cards.find { |x| x.name == card }
+      return res if res
+    end
+    raise "no card found"
+  end
+
   def choose_card(card,other=false)
-    card = Parse.get(card) if card.kind_of?(String)
+    card = get_card(card)
     (other ? side.other_side.choices.first : choice).execute! card
   end
 

@@ -89,6 +89,22 @@ module Card
       res
     end
 
+    def ==(c)
+      card_id == c.card_id
+    end
+    def eql?(c)
+      card_id == c.card_id
+    end
+    def equal?(c)
+      card_id == c.card_id
+    end
+    def ===(c)
+      card_id == c.card_id
+    end
+    def <=>(c)
+      card_id <=> c.card_id
+    end
+
 
   end
   

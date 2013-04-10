@@ -25,11 +25,13 @@ module Ability
 
     fattr(:choosable_cards) do
       res = choice.choosable_cards(side)
-      res = res.cards if res.respond_to?(:cards)
+      res = res.cards if res && res.respond_to?(:cards)
       res
     end
     def needs_decision?
-      choice.respond_to?(:choosable_cards)# && choosable_cards.size > 0
+      #return false unless choice.respond_to?(:choosable_cards)# && choosable_cards.size > 0
+      #return false unless choosable_cards
+      choice.respond_to?("needs_choice?") && choice.needs_choice?
     end
     def save!
       if needs_decision?
@@ -89,6 +91,9 @@ module Ability
     end
     def call(side)
       card_choice(side).tap { |x| x.run! }
+    end
+    def needs_choice?
+      true
     end
   end
   
@@ -270,6 +275,16 @@ module Ability
     def action(card,side)
       side.other_side.hand.remove(card)
       side.hand << card
+    end
+  end
+
+  class RunesForHonor < BaseChoice
+    def needs_choice?
+      false
+    end
+    def call(side)
+      side.played.pool.deplete_runes Card::Hero.new(:rune_cost => 4)
+      side.gain_honor 3
     end
   end
 end

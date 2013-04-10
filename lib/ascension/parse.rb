@@ -226,7 +226,7 @@ module Parse
     input_field :rune_cost, :honor_given, :power, :runes, :draw
     input_field :banish_center, :banish_hand_discard
     input_field :special_abilities, :realm, :name, :honor, :power_cost
-    input_field :discard_from_hand, :banish_hand
+    input_field :discard_from_hand, :banish_hand, :runes_for_honor
     fattr(:card_class) do
       ::Card::Hero
     end
@@ -265,6 +265,7 @@ module Parse
       mod_for_phrases(banish_center, Ability::BanishCenter, res)
       mod_for_phrases(banish_hand_discard, Ability::BanishHandDiscard, res)
       mod_for_phrases(discard_from_hand, Ability::DiscardFromHand, res)
+      mod_for_phrases(runes_for_honor, Ability::RunesForHonor, res)
       
       if special_abilities
         word = Word.parsed(:raw => special_abilities)
@@ -295,7 +296,7 @@ module Parse
       %w(card_class realm).each do |f|
         card.send("#{f}=",send(f))
       end
-      %w(name rune_cost honor runes power power_cost draw banish_center banish_hand_discard special_abilities discard_from_hand honor_given banish_hand).each do |f|
+      %w(name rune_cost honor runes power power_cost draw banish_center banish_hand_discard special_abilities discard_from_hand honor_given banish_hand runes_for_honor).each do |f|
         card.send("#{f}=",raw[f])
       end
       card

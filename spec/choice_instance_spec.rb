@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/spec_helper"
 
-if ShouldRun.file?(__FILE__)
-
+#if ShouldRun.file?(__FILE__)
+if true
 describe "share test" do
   include_context "game setup"
   let(:cards_to_play) { ['Reactor Monk'] }
@@ -54,7 +54,7 @@ describe "killing mephit" do
 
   it 'card is gone' do
     choose_card card_to_banish
-    game.void.cards.should == [Parse.get("Mephit"),card_to_banish]
+    game.void.cards.map { |x| x.name }.should == [Parse.get("Mephit"),card_to_banish].map { |x| x.name }
   end
 end
 
@@ -393,6 +393,26 @@ describe "hedron trigger" do
       cannon.has_invokable_ability.should be
     end
   end
+end
+
+describe "staff trigger" do
+  include_context "game setup"
+
+  let(:cards_to_play) { ['Yggdrasil Staff'] }
+  let(:staff) { side.constructs.first }
+  let(:pool_runes) { 5 }
+
+  before do
+    staff.invoke_abilities(side)
+  end
+
+  it 'adds 3 honor' do
+    side.honor.should == 3
+  end
+  it 'takes 4 runes' do
+    side.played.pool.runes.should == 1
+  end
+
 end
 
 
