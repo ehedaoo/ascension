@@ -26,7 +26,11 @@ shared_context "game setup" do
 
   let(:side) do
     res = game.sides.first
-    (hand_cards + cards_to_play).uniq.each { |c| res.deck << Parse.get(c) }
+    (hand_cards + cards_to_play).uniq.each do |c| 
+      c = Parse.get(c) 
+      res.deck << c
+      raise "bad" if c.triggers.any? { |t| t.respond_to?(:body_count) && t.body_count > 0 }
+    end
     res.draw_hand!
     res.played.pool.power += pool_power
     res.played.pool.runes += pool_runes

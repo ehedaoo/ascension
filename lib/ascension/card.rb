@@ -86,6 +86,8 @@ module Card
     def clone
       res = super
       res.card_id!
+      res.abilities = res.abilities.map { |x| x.clone }
+      res.triggers = res.triggers.map { |x| x.clone }
       res
     end
 

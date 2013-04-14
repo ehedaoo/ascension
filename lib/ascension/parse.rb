@@ -17,7 +17,10 @@ module Parse
     res = cards.find { |x| x.name == name }.tap { |x| raise "no card #{name}" unless x }
     raise "invoked_ability" if res.respond_to?(:invoked_ability) && res.invoked_ability
     res.invoked_ability = false if res.respond_to?(:invoked_ability)
-    res.clone
+    res = res.clone
+    res.abilities = res.abilities.map { |x| x.clone }
+    res.triggers = res.triggers.map { |x| x.clone }
+    res
   end
   
   class Words
@@ -133,10 +136,10 @@ module Parse
       end
 
       def mod_card(card)
-        card.triggers << trigger.tap { |x| x.optional = optional if x.respond_to?('optional=') } if trigger
+        card.triggers << trigger.tap { |x| x.optional = optional if x.respond_to?('optional=') }.clone if trigger
 
         if ability
-          abilities_target(card) << ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } 
+          abilities_target(card) << ability.tap { |x| x.optional = optional if x.respond_to?('optional=') }.clone
         end
         #card.invokable_abilities << invokable_ability.tap { |x| x.optional = optional if x.respond_to?('optional=') } if invokable_ability
       end
@@ -186,6 +189,55 @@ module Parse
       end
     end
 
+    class OnceProc
+      include FromHash
+      attr_accessor :cond, :body, :unite
+      fattr(:body_count) { 0 }
+
+      fattr(:traces) { [] }
+      def add_trace
+        begin
+          raise 'foo'
+        rescue => exp
+          self.traces << exp.backtrace
+        end
+      end
+      def call(*args)
+        add_trace
+
+        log = lambda do |str|
+          traces.last << str
+          puts str if $once_debug
+        end
+
+      
+        log["once call count #{body_count}"]
+        log["traces #{traces.size}"]
+
+        if $once_debug
+          str = traces.map { |x| x.join("\n") }.join("\n\n\n")
+          File.create "traces.txt",str
+        end
+        return if body_count > 0
+        c = cond[*args]
+        log["once cond #{c}"] 
+        if c
+          log["once body"]
+          self.body_count += 1
+          body[*args]
+        end
+      end
+      def [](*args)
+        call(*args)
+      end
+
+      def clone
+        add_trace
+        raise 'body_count' if body_count > 0
+        self.class.new(:cond => cond, :body => body, :unite => unite)
+      end
+    end
+
     class On < Base
       fattr(:triggerx) do
         lambda do |event, side|
@@ -208,7 +260,7 @@ module Parse
         res
       end
 
-      fattr(:trigger) do
+      fattr(:triggerx) do
         run_count = 0
         lambda do |event,side|
           if run_count == 0 && after_word.word_blk[event]
@@ -219,8 +271,19 @@ module Parse
         end
       end
 
+      fattr(:trigger) do
+        res = OnceProc.new(:unite => unite)
+        res.cond = lambda do |event,side|
+          after_word.word_blk[event]
+        end
+        res.body = lambda do |event,side|
+          send(category,side)
+        end
+        res
+      end
 
-      fattr(:ability) do
+
+      fattr(:abilityx) do
         if unite
           lambda do |side|
             side.events.each do |event|

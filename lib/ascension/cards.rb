@@ -105,6 +105,15 @@ class Played < Cards
   fattr(:pool) { Pool.new }
   def apply(card)
     card.apply_abilities(side)
+
+    card.triggers.each do |trigger|
+      if trigger.respond_to?(:unite) && trigger.unite
+        side.events.each do |event|
+          trigger.call event,side
+        end
+      end
+    end
+
     pool.runes += card.runes
     pool.power += card.power
     
