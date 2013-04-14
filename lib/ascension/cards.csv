@@ -1,4 +1,5 @@
 "Realm Short","Card Type","Name","count","rune_cost","power_cost","honor","runes","honor_given","power","+C","draw","banish_center","banish_hand","banish_discard","banish_hand_discard","discard_from_hand","special_abilities","triggerable_ability","undefined","runes_for_honor"
+"L","H","Lionheart","2","5",,3,,3,,,unite-1 on lifebound_hero_played,
 "V","H","Void Initiate",3,1,,1,1,,,1,,,,,"optional-1",,,,
 "V","H","Spike Vixen",2,2,,1,,,1,1,1,,,,,,,,
 "V","H","Shade ot Black Watch",3,3,,1,,,2,1,,,,,"optional-1",,,,

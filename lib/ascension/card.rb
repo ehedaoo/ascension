@@ -105,6 +105,21 @@ module Card
       card_id <=> c.card_id
     end
 
+    def handle_event(event,side)
+      if triggers.any? { |t| t.respond_to?(:unite) && t.unite }
+        #puts "got unite trigger"
+      end
+
+      triggers.each do |trigger|
+        if event.respond_to?(:card) && event.card.card_id == card_id
+          #raise 'same card'
+          # do nothing
+        else
+          trigger.call(event,side)
+        end
+      end
+    end
+
 
   end
   

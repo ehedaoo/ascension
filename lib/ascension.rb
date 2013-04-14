@@ -151,6 +151,7 @@ class Side
   fattr(:honor) { 0 }
   fattr(:side_id) { rand(100000000000000) }
   fattr(:choices) { [] }
+  fattr(:ability_tracker) { AbilityTracker.new(:side => self) }
 
   def draw_hand!
     5.times { draw_one! }

@@ -9,19 +9,27 @@ module Event
     include FromHash
     attr_accessor :side
     fattr(:events) { [] }
+    include Enumerable
+    def each(&b)
+      events.each(&b)
+    end
     def <<(event)
-      event.first = true if first?(event)
+      event.events = self
+      #event.first = true if first?(event)
       self.events << event
       propagate(event)
     end
     def propagate(event)
       if side
         side.constructs.each { |c| c.handle_event(event,side) } 
-        #side.played.each { |c| c.apply_triggers(event,side) }
+        #side.played.each { |c|}
+        side.played.each { |c| c.handle_event(event,side) }
       end
     end
     def first?(event)
-      events.select { |x| x.key == event.key && x.class == event.class }.empty?#.tap { |x| puts "first? #{x}" }
+      match = events.select { |x| x.key == event.key && x.class == event.class }#.size == 1#.tap { |x| puts "first? #{x}" }
+      raise "Bad something" if match.empty?
+      match.first == event
     end
     def [](i)
       events[i]
@@ -33,7 +41,12 @@ module Event
   
   class Base
     include FromHash
-    fattr(:first) { false }
+    #fattr(:first) { false }
+    attr_accessor :events
+
+    fattr(:first) do
+      events.first?(self)
+    end
   end
   
   class CardPlayed < Base

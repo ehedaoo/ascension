@@ -212,10 +212,10 @@ describe 'input file' do
     @file = Parse::InputFile.new
   end
   it 'smoke' do
-    @file.lines.size.should == 48
+    @file.lines.size.should == 49
   end
   it 'smoke2' do
-    @file.cards.size.should == 100
+    @file.cards.size.should == 102
   end
 end
 

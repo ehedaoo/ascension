@@ -412,7 +412,65 @@ describe "staff trigger" do
   it 'takes 4 runes' do
     side.played.pool.runes.should == 1
   end
+end
 
+describe "lionheart" do
+  include_context "game setup"
+
+  let(:before_lion) { [] }
+  let(:after_lion) { [] }
+  let(:cards_to_play) { before_lion + ['Lionheart'] + after_lion }
+  let(:lion) { game; side; get_card("Lionheart") }
+
+  it 'adds 3 honor' do
+    side.honor.should == 3
+  end
+  it 'doesnt draw' do
+    side.hand.size.should == 4
+  end
+  it 'has abilities' do
+    lion.abilities.size.should == 2
+  end
+  it 'has triggers' do
+    lion.triggers.size.should == 1
+    #lion.triggers.first.unite.should == true
+  end
+
+  describe "non-lifebound before" do
+    let(:before_lion) { ['Avatar Golem'] }
+    it 'hand has 3 cards' do
+      side.hand.size.should == 3
+    end
+  end
+
+  describe "lifebound before" do
+    let(:before_lion) { ['Lifeblood Initiate'] }
+    it 'causes lion to draw' do
+      side.hand.size.should == 4
+    end
+  end
+
+  describe "lifebound after" do
+    let(:after_lion) { ['Lifeblood Initiate'] }
+    it 'causes lion to draw' do
+      side.hand.size.should == 4
+    end
+  end
+
+  describe "flytrap before" do
+    let(:before_lion) { ['Flytrap Witch'] }
+    it 'causes lion to draw' do
+      side.hand.size.should == 5
+    end
+  end
+
+  describe "lifebound before and after" do
+    let(:before_lion) { ['Lifeblood Initiate'] }
+    let(:after_lion) { ['Landtalker'] }
+    it 'causes lion to only draw once' do
+      side.hand.size.should == 3
+    end
+  end
 end
 
 

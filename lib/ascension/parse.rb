@@ -32,6 +32,9 @@ module Parse
       words["first_#{word}"] = lambda do |event|
         b.call(event) && event.first
       end
+      words["first_other_#{word}"] = lambda do |event,card|
+        b.call(event) && event.first(:excluding => card)
+      end
     end
     def reg_ability(word,ability)
       abilities[word.to_s] = ability
@@ -115,6 +118,9 @@ module Parse
       fattr(:optional) do
         modifier == 'optional'
       end
+      fattr(:unite) do
+        modifier == "unite"
+      end
       fattr(:after_clause) { raw.split(" ").last }
       fattr(:after_word) do
         Word.parsed(:raw => after_clause)
@@ -172,12 +178,57 @@ module Parse
       end
     end
 
+    class TriggerProc
+      include FromHash
+      attr_accessor :event_blk, :phrase, :unite
+      def call(event,side)
+        event_blk[phrase,event,side]
+      end
+    end
+
     class On < Base
-      fattr(:trigger) do
+      fattr(:triggerx) do
         lambda do |event, side|
           if after_word.word_blk[event]
             send(category, side)
           end
+        end
+      end
+
+      fattr(:triggerx) do
+        res = TriggerProc.new(:phrase => self, :unite => unite)
+        run_count = 0
+        res.event_blk = lambda do |p,event,side|
+          if run_count == 0 && p.after_word.word_blk[event]
+            run_count += 1
+            p.send(p.category, side)
+            puts event.card.inspect
+          end
+        end
+        res
+      end
+
+      fattr(:trigger) do
+        run_count = 0
+        lambda do |event,side|
+          if run_count == 0 && after_word.word_blk[event]
+            run_count += 1
+            send(category, side)
+            puts event.card.inspect
+          end
+        end
+      end
+
+
+      fattr(:ability) do
+        if unite
+          lambda do |side|
+            side.events.each do |event|
+              trigger.call(event,side)
+            end
+          end
+        else
+          nil
         end
       end
     end
