@@ -22,7 +22,7 @@
 "L","H","Lifeblood Initiate",3,1,,1,1,1,,,,,,,,,,,
 "L","H","Wolf Shaman",3,3,,1,1,,,1,1,,,,,,,,
 "L","H","Runic Lycanthrope",2,3,,1,2,,"2 if lifebound_hero_played",,,,,,,,,,
-"L","C","Yggdrasil Staff",2,4,,2,,,1,,,,,,,,,"4_rune_to_3_honor",,"invokable-1"
+"L","C","Yggdrasil Staff",2,4,,2,,,1,,,,,,,,,,,"invokable-1"
 "L","H","Druids ot Stone Circle",2,4,,3,,,,,,,,,,,"acquire_hero_3",,
 "L","C","Snapdragon",2,5,,2,1,"1 on first_lifebound_hero_played",,,,,,,,,,,
 "L","H","Flytrap Witch",2,5,,2,,2,,1,1,,,,,,,,

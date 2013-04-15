@@ -27,7 +27,7 @@ shared_context "game setup" do
   let(:side) do
     res = game.sides.first
     (hand_cards + cards_to_play).uniq.each do |c| 
-      c = Parse.get(c) 
+      c = Parse.get(c) if c.kind_of?(String)
       res.deck << c
       raise "bad" if c.triggers.any? { |t| t.respond_to?(:body_count) && t.body_count > 0 }
     end
@@ -35,7 +35,7 @@ shared_context "game setup" do
     res.played.pool.power += pool_power
     res.played.pool.runes += pool_runes
     cards_to_play.each do |name|
-      c = res.hand.find { |x| x.name == name } 
+      c = name.kind_of?(String) ? res.hand.find { |x| x.name == name } : name
       raise "no card #{name}" unless c
       res.play(c) 
     end
@@ -71,7 +71,7 @@ shared_context "game setup" do
 
   def choose_card(card,other=false)
     card = get_card(card)
-    (other ? side.other_side.choices.first : choice).execute! card
+    (other ? side.other_side.choices.first : side.choices.first).execute! card
   end
 
   def add_to_hand_and_play(name)

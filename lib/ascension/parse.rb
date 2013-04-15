@@ -51,22 +51,13 @@ module Parse
       #ops[:raw] = ops[:raw].gsub("other_side-","")
       new(ops)
     end
-    fattr(:modifier) do
-      a = raw.split("-")
-      a.size > 1 ? a[0] : nil
-    end
     fattr(:main) do
-      raw.split("-").last
+      a = raw.split("-")
+      raise "invokable" if a[0] == 'invokable'
+      a.last
     end
     fattr(:word_blk) do
-      raw_block = Words.instance.words[main.to_s] || (raise "no block for #{raw}")
-      if modifier == 'othefr_side'
-        lambda do |side|
-          raw_block[side.other_side]
-        end
-      else
-        raw_block
-      end
+      Words.instance.words[main.to_s] || (raise "no block for #{raw}")
     end
     def occured?(side)
       #side = side.other_side if modifier == "other_side"
@@ -81,9 +72,11 @@ module Parse
   module Phrase
     def self.phrase_class(raw)
       a = raw.split(" ")
-      h = {"on" => On, "if" => If, "for" => For, "foreach" => Foreach}
+      h = {"on" => On, "if" => If, "for" => For, "foreach" => Foreach, "of" => Of, "and" => And, "or" => Or}
       if a.size == 3
         h[a[1]]
+      elsif a.size == 7
+        h[a[3]]
       else
         Basic
       end
@@ -159,70 +152,76 @@ module Parse
         end
       end
     end
-    
-    class Basic < Base
-      def mod_card(card)
-        if category == :runes
-          card.runes += before_clause.to_i if before_clause.to_i > 0
-        elsif category == :power || category == :add_power
-          card.power += before_clause.to_i
-        elsif category == :add_honor
-          #raise "in honor part"
-          card.honor_earned = before_clause.to_i
-        elsif category == :draw_cards
-          abilities_target(card) << lambda do |side|
-            draw_cards(side)
+
+    class Compound < Base
+      fattr(:two_raw_phrases) do
+        raise "bad" unless raw =~ /\((.+?)\) (and|or) \((.+?)\)/
+        [$1,$3]
+      end
+
+      fattr(:before_phrase) do
+        Phrase.parsed(two_raw_phrases[0])
+      end
+
+      fattr(:after_phrase) do
+        Phrase.parsed(two_raw_phrases[1])
+      end
+
+      fattr(:phrases) { [before_phrase,after_phrase] }
+    end
+
+    class And < Compound
+      fattr(:ability) do
+        lambda do |side|
+          phrases.each do |p|
+            p.ability.call(side)
           end
-        elsif category.kind_of?(Class)
-          card.abilities << category.new(:optional => optional, :parent_card => card)
-        else
-          raise "unknown category #{category}"
         end
       end
     end
 
-    class TriggerProc
-      include FromHash
-      attr_accessor :event_blk, :phrase, :unite
-      def call(event,side)
-        event_blk[phrase,event,side]
+    class Or < Compound
+      fattr(:ability) do
+        Ability::ChooseAbility.new(:optional => optional, :ability_choices => phrases.map { |x| x.ability })
       end
     end
+    
+    class Basic < Base
+      class << self
+        def basic_mod_card_proc
+          lambda do |card,phrase|
+            if phrase.category == :runes
+              card.runes += phrase.before_clause.to_i if phrase.before_clause.to_i > 0
+            elsif phrase.category == :power || phrase.category == :add_power
+              card.power += phrase.before_clause.to_i
+            elsif phrase.category == :add_honor
+              #raise "in honor part"
+              card.honor_earned = phrase.before_clause.to_i
+            elsif phrase.category == :draw_cards
+              phrase.abilities_target(card) << lambda do |side|
+                phrase.draw_cards(side)
+              end
+            elsif phrase.category.kind_of?(Class)
+              phrase.abilities_target(card) << phrase.category.new(:optional => phrase.optional, :parent_card => card)
+            else
+              raise "unknown category #{phrase.category}"
+            end
+          end
+        end
+      end
+      def mod_card(card)
+        self.class.basic_mod_card_proc[card,self]
+      end
+    end
+
 
     class OnceProc
       include FromHash
       attr_accessor :cond, :body, :unite
       fattr(:body_count) { 0 }
-
-      fattr(:traces) { [] }
-      def add_trace
-        begin
-          raise 'foo'
-        rescue => exp
-          self.traces << exp.backtrace
-        end
-      end
       def call(*args)
-        add_trace
-
-        log = lambda do |str|
-          traces.last << str
-          puts str if $once_debug
-        end
-
-      
-        log["once call count #{body_count}"]
-        log["traces #{traces.size}"]
-
-        if $once_debug
-          str = traces.map { |x| x.join("\n") }.join("\n\n\n")
-          File.create "traces.txt",str
-        end
         return if body_count > 0
-        c = cond[*args]
-        log["once cond #{c}"] 
-        if c
-          log["once body"]
+        if cond[*args]
           self.body_count += 1
           body[*args]
         end
@@ -232,45 +231,11 @@ module Parse
       end
 
       def clone
-        add_trace
-        raise 'body_count' if body_count > 0
         self.class.new(:cond => cond, :body => body, :unite => unite)
       end
     end
 
     class On < Base
-      fattr(:triggerx) do
-        lambda do |event, side|
-          if after_word.word_blk[event]
-            send(category, side)
-          end
-        end
-      end
-
-      fattr(:triggerx) do
-        res = TriggerProc.new(:phrase => self, :unite => unite)
-        run_count = 0
-        res.event_blk = lambda do |p,event,side|
-          if run_count == 0 && p.after_word.word_blk[event]
-            run_count += 1
-            p.send(p.category, side)
-            puts event.card.inspect
-          end
-        end
-        res
-      end
-
-      fattr(:triggerx) do
-        run_count = 0
-        lambda do |event,side|
-          if run_count == 0 && after_word.word_blk[event]
-            run_count += 1
-            send(category, side)
-            puts event.card.inspect
-          end
-        end
-      end
-
       fattr(:trigger) do
         res = OnceProc.new(:unite => unite)
         res.cond = lambda do |event,side|
@@ -280,19 +245,6 @@ module Parse
           send(category,side)
         end
         res
-      end
-
-
-      fattr(:abilityx) do
-        if unite
-          lambda do |side|
-            side.events.each do |event|
-              trigger.call(event,side)
-            end
-          end
-        else
-          nil
-        end
       end
     end
     
@@ -330,6 +282,25 @@ module Parse
         end
       end
     end
+
+    class Of < Base
+      fattr(:ability) do
+        if %w(runes power).include?(after_word.raw)
+          lambda do |side|
+            val = side.played.pool.send(after_word.raw)
+            side.played.pool.send("#{after_word.raw}=",val+before_clause.to_i)
+          end
+        elsif after_word.raw == "draw"
+          lambda do |side|
+            before_clause.to_i.times { side.draw_one! }
+          end
+        else
+          after_word.word_blk
+        end
+      end
+    end
+
+
   end
   
   class Card
@@ -482,7 +453,7 @@ end
   Parse.reg_ability "acquire_hero_#{i}", Ability::AcquireHero.new(:max_rune_cost => i)
 end
 
-Parse.reg_ability :discard_construct, Ability::DiscardConstruct
+Parse.reg_ability :discard_construct, Ability::DiscardConstruct.new
 Parse.reg_ability :discard_all_but_one_construct, Ability::KeepOneConstruct.new
 
 Parse.reg_ability :copy_hero, Ability::CopyHero.new
@@ -490,6 +461,8 @@ Parse.reg_ability :copy_hero, Ability::CopyHero.new
 Parse.reg_ability :acquire_center, Ability::AcquireCenter.new
 
 Parse.reg_ability :take_opponents_card, Ability::TakeOpponentsCard.new
+
+Parse.reg_ability :acquire_construct, Ability::AcquireConstruct.new
 
 %w(power_or_rune_1 take_opponents_casrd acquire_centerx).each do |f|
   Parse.reg_ability f do |*args|

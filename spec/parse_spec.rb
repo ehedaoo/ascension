@@ -51,6 +51,156 @@ describe 'word' do
   end
 end
 
+describe "of" do
+  include_context "game setup"
+
+  let(:raw) { "1 of power" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw) }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+
+  it 'should have 1 power' do
+    side.played.pool.power.should == 1
+  end
+
+  describe "runes" do
+    let(:raw) { "1 of runes" }
+    it 'should have 1 power' do
+      side.played.pool.runes.should == 1
+    end
+  end
+
+  describe "2 runes" do
+    let(:raw) { "2 of runes" }
+    it 'should have 1 power' do
+      side.played.pool.runes.should == 2
+    end
+  end
+end
+
+describe "and" do
+  include_context "game setup"
+
+  let(:raw) { "(1 of power) and (1 of runes)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw) }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+
+  it 'should have 1 power' do
+    side.played.pool.power.should == 1
+  end
+  it 'should have 1 rune' do
+    side.played.pool.runes.should == 1
+  end
+
+end
+
+describe "or" do
+  include_context "game setup"
+
+  let(:raw) { "(1 of power) or (1 of runes)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw) }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+
+  it 'should have choice' do
+    side.choices.size.should == 1
+  end
+
+  it 'choice works' do
+    choose_card choice.choosable_cards.first
+    side.played.pool.power.should == 1
+    side.played.pool.runes.should == 0
+  end
+
+  it 'choice works 2' do
+    choose_card choice.choosable_cards.last
+    side.played.pool.runes.should == 1
+    side.played.pool.power.should == 0
+  end
+
+  # needs the choices to be named somehow
+end
+
+if true
+describe "or 2" do
+  include_context "game setup"
+
+  let(:raw) { "(3 of runes) or (1 of draw)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw) }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+  let(:center_cards) { ["Rocket Courier X-99","Hedron Cannon"] }
+
+  it 'should have choice' do
+    side.choices.size.should == 1
+  end
+
+  it 'choice works' do
+    choose_card choice.choosable_cards.first
+    side.played.pool.runes.should == 3
+  end
+
+  it 'choice works 2' do
+    side.hand.size.should == 4
+    choose_card choice.choosable_cards.last
+    side.hand.size.should == 5
+  end
+
+  # needs the choices to be named somehow
+end
+end
+
+if true
+describe "or 3" do
+  include_context "game setup"
+
+  let(:raw) { "(3 of runes) or (1 of acquire_construct)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw) }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+  let(:center_cards) { ["Rocket Courier X-99","Hedron Cannon"] }
+
+  it 'should have choice' do
+    side.choices.size.should == 1
+  end
+
+  it 'choice works' do
+    choose_card choice.choosable_cards.first
+    side.played.pool.runes.should == 3
+  end
+
+  it 'choice works 2' do
+    choose_card choice.choosable_cards.last
+    side.choices.size.should == 1
+    choose_card "Hedron Cannon"
+    side.discard.map { |x| x.name }.should == ['Hedron Cannon']
+  end
+
+  # needs the choices to be named somehow
+end
+end
+
 describe 'phrase' do
   before do
     @side = Side.new
@@ -203,6 +353,13 @@ describe 'phrase' do
       end
       @parse_card.card.apply_abilities(@side)
       @side.honor.should == 1
+    end
+  end
+
+  describe "or" do
+    let(:raw) { "abc" }
+    fattr(:phrase) do
+      Parse::Phrase.parsed(@raw).tap { |x| x.category = @category }
     end
   end
 end

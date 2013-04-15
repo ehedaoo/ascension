@@ -414,6 +414,22 @@ describe "staff trigger" do
   end
 end
 
+describe "staff don't use" do
+  include_context "game setup"
+
+  let(:cards_to_play) { ['Yggdrasil Staff'] }
+  let(:staff) { side.constructs.first }
+
+  before do
+    side.end_turn!
+  end
+
+  it 'smoke' do
+    side.played.pool.power.should == 1
+    side.played.pool.runes.should == 0
+  end
+end
+
 if true
 describe "lionheart" do
   include_context "game setup"
@@ -459,13 +475,6 @@ describe "lionheart" do
   end
 
   describe "flytrap before" do
-    before do
-      $once_debug = true
-    end
-    after do
-      $once_debug = false
-    end
-    
     let(:before_lion) { ['Flytrap Witch'] }
     it 'causes lion to draw' do
       side.hand.size.should == 5

@@ -18,6 +18,7 @@ module Card
     include HonorEarned
 
     setup_mongo_persist :realm, :name, :card_id
+    attr_accessor :parent_side
 
 
 
@@ -134,6 +135,9 @@ module Card
     def mechana?
       realm == :mechana
     end
+    def engage_cost
+      rune_cost
+    end
   end
   
   class Hero < Purchaseable
@@ -173,7 +177,7 @@ module Card
     fattr(:invoked_ability) { false }
 
     def has_invokable_ability
-      invokable_abilities.size > 0 && !invoked_ability
+      invokable_abilities.any? { |a| !a.respond_to?("invokable?") || (parent_side && a.invokable?(parent_side)) } && !invoked_ability
     end
     def addl_json_attributes
       ["has_invokable_ability"]
@@ -212,6 +216,9 @@ module Card
     attr_accessor :power_cost
     setup_mongo_persist :realm, :name, :power_cost, :card_id
     fattr(:runes) { 0 }
+    def engage_cost
+      power_cost
+    end
     class << self
       def cultist
         new(:power_cost => 2, :name => "Cultist", :honor_earned => 1)

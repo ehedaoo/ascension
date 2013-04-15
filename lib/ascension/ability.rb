@@ -50,14 +50,18 @@ module Ability
         choice.action(chosen_card,side)
       elsif choice.optional
         # do nothing  
+      elsif choosable_cards.empty?
+        #do nothing
       else
-        raise "has to make a choice"
+        raise "#{name} has to make a choice. options: " + choosable_cards.map { |x| x.name }.inspect
       end
       delete!
     end
 
     def delete!
+      old = side.choices.size
       side.choices -= [self]
+      raise "Bad sizes" unless old-1 == side.choices.size
     end
   end
 
@@ -154,7 +158,7 @@ module Ability
     end
   end
 
-  class DiscardFromHand < Banish
+  class DiscardFromHand < BaseChoice
     def action(card,side)
       side.hand.discard(card)
     end
@@ -230,6 +234,17 @@ module Ability
       side.engage_free(card)
     end
   end
+
+  class AcquireConstruct < BaseChoice
+    #attr_accessor :max_rune_cost
+    def choosable_cards(side)
+      #side.game.center_wc.select { |x| x.hero? }.each { |x| puts [x.name,x.rune_cost].inspect }
+      side.game.center.cards.select { |x| x.kind_of?(Card::Construct) }
+    end
+    def action(card,side)
+      side.engage_free(card)
+    end
+  end
   
   class CopyHero < BaseChoice
     def choosable_cards(side)
@@ -282,9 +297,31 @@ module Ability
     def needs_choice?
       false
     end
+    def invokable?(side)
+      side.played.pool.runes >= 4
+    end
     def call(side)
       side.played.pool.deplete_runes Card::Hero.new(:rune_cost => 4)
       side.gain_honor 3
+    end
+  end
+
+  class ChooseAbility < BaseChoice
+    def needs_choice?
+      true
+    end
+    fattr(:ability_choices) { [] }
+    def choosable_cards(side)
+      ability_choices
+    end
+    def action(ability,side)
+      #ability.call(side)
+      if ability.respond_to?(:choice_instance)
+        ability.choice_instance(side).save!
+        raise "bad size #{side.choices.size}" unless side.choices.size == 2
+      else
+        ability.call(side)
+      end
     end
   end
 end

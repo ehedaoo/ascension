@@ -41,7 +41,7 @@ class Pool
     if remaining > 0
       remaining = use_rune_type(:runes,remaining)
     end
-    raise "not enough runes" if remaining > 0
+    raise "not enough runes to purchase #{card.name}" if remaining > 0
   end
   def to_s
     "#{runes} (#{mechana_runes}) / #{power}"
