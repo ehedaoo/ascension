@@ -20,6 +20,13 @@ module Card
     setup_mongo_persist :realm, :name, :card_id
     attr_accessor :parent_side
 
+    def addl_json_attributes
+      %w(image_url) 
+    end
+    def image_url
+      (ImageMap.get(name) || "none").to_s
+    end
+
 
 
     attr_accessor :realm
@@ -129,6 +136,8 @@ module Card
   class Purchaseable < Base
     setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id
 
+
+
     fattr(:runes) { 0 }
     fattr(:power) { 0 }
     attr_accessor :rune_cost
@@ -180,7 +189,7 @@ module Card
       invokable_abilities.any? { |a| !a.respond_to?("invokable?") || (parent_side && a.invokable?(parent_side)) } && !invoked_ability
     end
     def addl_json_attributes
-      ["has_invokable_ability"]
+      ["has_invokable_ability",'image_url']
     end
 
     def handle_event(event,side)
