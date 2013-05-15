@@ -66,6 +66,9 @@ class Game
   def addl_json_attributes
     %w(mongo_id engageable_cards constant_cards current_side_index last_update_dt)
   end
+  def restricted_json_attributes
+    %w(deck void)
+  end
 
   fattr(:sides) { [] }
   fattr(:center) { Center.new(:game => self) }
@@ -125,7 +128,8 @@ class Game
       game = Game.new
       side = Side.new(:game => game)
       game.sides << side
-      game.sides << Side.ai(:game => game)
+      #game.sides << Side.ai(:game => game)
+      game.sides << Side.new(:game => game)
 
       game.deck = CenterDeck.starting
       #game.deck << Parse.get("Mephit")
@@ -155,13 +159,21 @@ class Turn
   fattr(:engaged_cards) { [] }
   fattr(:played_cards) { [] }
   setup_mongo_persist :engaged_cards, :played_cards
+
+  def as_json
+    puts "turn as_json"
+    {}
+  end
+end
+
+class PendingChoiceError < RuntimeError
 end
 
 class Side
   include FromHash
-  setup_mongo_persist :discard, :deck, :hand, :played, :constructs, :honor, :side_id, :choices, :ai, :turns
+  setup_mongo_persist :discard, :deck, :hand, :played, :constructs, :honor, :side_id, :choices, :ai, :turns, :events
   def addl_json_attributes
-    %w(last_turn current_turn)
+    %w(last_turn current_turn deck_honor)
   end
   attr_accessor :game, :ai
   fattr(:discard) { Discard.new(:side => self) }
@@ -190,7 +202,11 @@ class Side
   def draw_one!
     hand << deck.draw_one
   end
+  def check_pending_choice!
+    raise PendingChoiceError.new if choices.size > 0
+  end
   def play(card)
+    check_pending_choice!
     played << card
     hand.remove(card)
     current_turn.played_cards << card
@@ -222,6 +238,7 @@ class Side
     current_turn.engaged_cards << monster
   end
   def engage(card)
+    check_pending_choice!
     #debugger if $mega_debugger
     if card.monster?
       defeat(card)
@@ -240,6 +257,7 @@ class Side
     game.center_wc.engageable_cards(self) 
   end
   def end_turn!
+    check_pending_choice!
     played.discard!
     hand.discard!
     constructs.apply!
@@ -301,6 +319,14 @@ class Side
     end
   end
 
+  def deck_honor
+    card_places.map do |cards|
+      cards.map do |card|
+        card.respond_to?(:honor) ? card.honor : 0
+      end
+    end.flatten.map { |x| x || 0 }.sum
+  end
+
   class << self
     def ai(ops)
       res = new(ops)
@@ -310,7 +336,7 @@ class Side
   end
 end
 
-%w(card cards ability pool events parse turn_manager setup_rchoice).each do |f|
+%w(card cards ability pool events parse turn_manager setup_rchoice image_map).each do |f|
   load File.dirname(__FILE__) + "/ascension/#{f}.rb"
 end
 

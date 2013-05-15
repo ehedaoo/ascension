@@ -17,8 +17,8 @@ module Card
     include FromHash
     include HonorEarned
 
-    setup_mongo_persist :realm, :name, :card_id
-    attr_accessor :parent_side
+    setup_mongo_persist :realm, :name, :card_id, :honor
+    attr_accessor :parent_side, :honor
 
     def addl_json_attributes
       %w(image_url) 
@@ -134,7 +134,7 @@ module Card
   end
   
   class Purchaseable < Base
-    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id
+    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :honor
 
 
 
@@ -155,19 +155,19 @@ module Card
         new(:runes => 1, :name => "Apprentice")
       end
       def mystic
-        new(:runes => 2, :name => 'Mystic', :rune_cost => 3)
+        new(:runes => 2, :name => 'Mystic', :rune_cost => 3, :honor => 1)
       end
       def militia
         new(:power => 1, :name => 'Militia')
       end
       def heavy_infantry
-        new(:power => 2, :name => "Heavy Infantry", :rune_cost => 2)
+        new(:power => 2, :name => "Heavy Infantry", :rune_cost => 2, :honor => 1)
       end
       def standin
         new(:rune_cost => 2, :name => "Standin")
       end
       def arha
-        new(:rune_cost => 1, :name => "Arha Initiate").tap do |h|
+        new(:rune_cost => 1, :name => "Arha Initiate", :honor => 1).tap do |h|
           h.abilities << Ability::Draw.new
         end
       end
@@ -175,7 +175,7 @@ module Card
   end
   
   class Construct < Purchaseable
-    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :invoked_ability
+    setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :invoked_ability, :honor
     class << self
       def shadow_star
         new(:power => 1)

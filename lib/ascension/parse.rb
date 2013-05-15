@@ -335,7 +335,7 @@ module Parse
       end
     end
     fattr(:card) do
-      res = card_class.new(:name => name, :realm => realm)
+      res = card_class.new(:name => name, :realm => realm, :honor => honor.to_i)
 
       #raise "witch #{inspect}" if name == 'Flytrap Witch'
 

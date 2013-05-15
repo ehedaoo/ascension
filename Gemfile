@@ -37,5 +37,7 @@ gem 'bson_ext'
 gem 'mongo_scope'
 gem 'mongo'
 gem 'sinatra'
+gem 'nokogiri'
+gem 'google-search'
 
 

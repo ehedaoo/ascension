@@ -25,22 +25,24 @@ module JsonPersist
     res.flatten.uniq
   end
   def to_json_hash
+    restricted = []
+    restricted = restricted_json_attributes.map { |x| x.to_s } if respond_to?(:restricted_json_attributes)
+
     res = mongo_child_attributes.inject({}) do |h,attr| 
-      obj = send(attr)
+      #obj = 
       #raise "#{attr} is nil" unless obj
-      new_hash_json(attr,h,obj)
+      restricted.include?(attr.to_s) ? h : new_hash_json(attr,h,send(attr)) 
     end.merge("_mongo_class" => self.class.to_s)
     klass.mongo_reference_attributes.each do |attr|
       val = send(attr)
-      res[attr] = val.to_mongo_ref_hash if val
+      res[attr] = val.to_mongo_ref_hash if val && !restricted.include?(attr.to_s)
     end
-
     if respond_to?(:addl_json_attributes) && true
       #puts "in addl_json_attributes part"
       addl = [full_addl_json_attributes].flatten.select { |x| x }
       addl.each do |attr|
         #puts "addl attr #{attr}"
-        res = new_hash_json(attr,res,send(attr))
+        res = new_hash_json(attr,res,send(attr)) unless restricted.include?(attr.to_s)
       end
     end
     res

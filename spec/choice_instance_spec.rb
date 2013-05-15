@@ -412,6 +412,10 @@ describe "staff trigger" do
   it 'takes 4 runes' do
     side.played.pool.runes.should == 1
   end
+
+  it 'deck honor' do
+    side.deck_honor.should == 2
+  end
 end
 
 describe "staff don't use" do
@@ -430,7 +434,6 @@ describe "staff don't use" do
   end
 end
 
-if true
 describe "lionheart" do
   include_context "game setup"
 
@@ -496,6 +499,27 @@ describe "lionheart" do
     end
   end
 end
+
+describe "can't continue with pending choice" do
+  include_context "game setup"
+  let(:cards_to_play) { ['Temple Librarian'] }
+  let(:hand_cards) { ['Avatar Golem'] }
+  let(:center_cards) { ['Wolf Shaman'] }
+  let(:pool_runes) { 10 }
+
+  it 'smoke' do
+    side.choices.size.should == 1
+  end
+
+  it 'playing raises error' do
+    lambda { play_card "Avatar Golem" }.should raise_error(PendingChoiceError)
+  end
+  it 'ending turn raises error' do
+    lambda { side.end_turn! }.should raise_error(PendingChoiceError)
+  end
+  it 'buying card' do
+    lambda { side.engage get_card("Wolf Shaman") }.should raise_error(PendingChoiceError)
+  end
 end
 
 describe "ChoiceInstance" do

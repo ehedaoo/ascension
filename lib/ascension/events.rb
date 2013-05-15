@@ -7,7 +7,12 @@ EOF
 module Event
   class Events
     include FromHash
+    setup_mongo_persist :events
     attr_accessor :side
+
+    def as_json
+      []
+    end
     fattr(:events) { [] }
     include Enumerable
     def each(&b)
@@ -50,6 +55,7 @@ module Event
   end
   
   class CardPlayed < Base
+    setup_mongo_persist :card
     attr_accessor :card
     def realm
       card.realm
@@ -63,6 +69,7 @@ module Event
   end
   
   class MonsterKilled < Base
+    setup_mongo_persist :card
     attr_accessor :card
     fattr(:center) { false }
     def key
@@ -71,6 +78,7 @@ module Event
   end
   
   class CardPurchased < Base
+    setup_mongo_persist :card
     attr_accessor :card
     def realm
       card.realm
@@ -84,6 +92,10 @@ module Event
   end
 
   class EndTurn < Base
+    fattr(:standin) do
+      14
+    end
+    setup_mongo_persist :standin
     def key
       [:end_turn]
     end

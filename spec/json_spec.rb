@@ -12,3 +12,47 @@ describe 'card json' do
   end
 
 end
+
+describe "game json" do
+  include_context "game setup"
+
+  let(:hand_cards) { ['Void Initiate'] }
+
+  it 'image_url' do
+    side
+    json = game.as_json
+    card = json['sides'].first['hand']['cards'].first
+    card['name'].should == 'Void Initiate'
+    url = card['image_url']
+    url.should == 'http://www.nerdtitan.com/wp-content/uploads/2013/01/void-initiate.png'
+  end
+
+  it 'image url 2' do
+    side
+    game.mongo.save!
+    g2 = Game.collection.find_objects(:_id => game.mongo_id).to_a.first.as_json
+    #raise game.sides.first.hand.map { |x| x.name }.inspect
+    card = g2['sides'].first['hand']['cards'].first
+    card['name'].should == 'Void Initiate'
+    #raise card.inspect
+    url = card['image_url']
+    url.should == 'http://www.nerdtitan.com/wp-content/uploads/2013/01/void-initiate.png'
+  end
+
+  it 'image url 3' do
+    Game.reset!
+    g2 = Game.collection.find_objects.to_a.first.as_json
+    #raise game.sides.first.hand.map { |x| x.name }.inspect
+    card = g2['sides'].first['hand']['cards'].first
+    #card['name'].should == 'Apprentice'
+    #raise card.inspect
+    #url = card['image_url']
+    #url.should == 'none'
+  end
+end
+
+describe 'iamges' do
+  it 'smoke' do
+    #raise ImageMap.cards_without_image.inspect
+  end
+end

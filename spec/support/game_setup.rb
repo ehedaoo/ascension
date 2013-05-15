@@ -80,4 +80,9 @@ shared_context "game setup" do
     side.play(card)
   end
 
+  def play_card(name)
+    card = side.hand.find { |x| x.name == name }
+    side.play card
+  end
+
 end
