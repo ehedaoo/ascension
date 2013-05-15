@@ -24,7 +24,7 @@ group :development do
 end
 
 gem 'mharris_ext'
-gem "rchoice", :path => '/code/orig/rchoice'
+gem "rchoice"
 #gem "rchoice", :path => "/users/mharris717/gems/rchoice-0.2.0"
 #gem 'rchoice','0.2.0'
 #gem 'rchoice', :git => "git@github.com:mharris717/rchoice.git", :branch => "gemdir"
