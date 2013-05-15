@@ -29,7 +29,7 @@ gem "rchoice", :path => '/code/orig/rchoice'
 #gem 'rchoice','0.2.0'
 #gem 'rchoice', :git => "git@github.com:mharris717/rchoice.git", :branch => "gemdir"
 
-gem "mongo_persist", :path => "/code/orig/mongo_persist"
+gem "mongo_persist"
 gem 'andand'
 
 gem 'activesupport'

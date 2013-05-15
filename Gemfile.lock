@@ -1,15 +1,4 @@
 PATH
-  remote: /code/orig/mongo_persist
-  specs:
-    mongo_persist (0.2.0)
-      activesupport
-      andand
-      bson_ext
-      mharris_ext
-      mongo
-      mongo_scope
-
-PATH
   remote: /code/orig/rchoice
   specs:
     rchoice (0.2.0)
@@ -23,9 +12,10 @@ GEM
       i18n (= 0.6.1)
       multi_json (~> 1.0)
     andand (1.3.3)
-    bson (1.7.0)
-    bson_ext (1.7.0)
-      bson (~> 1.7.0)
+    bson (1.8.5)
+    bson (1.8.5-java)
+    bson_ext (1.8.5)
+      bson (~> 1.8.5)
     childprocess (0.3.9)
       ffi (~> 1.0, >= 1.0.11)
     coderay (1.0.9)
@@ -64,15 +54,23 @@ GEM
       watchr
     lumberjack (1.0.2)
     method_source (0.8.1)
-    mharris_ext (1.6.0)
+    mharris_ext (1.7.0)
       facets
       fattr
-    mongo (1.7.0)
-      bson (~> 1.7.0)
+    mongo (1.8.5)
+      bson (~> 1.8.5)
+    mongo_persist (0.2.1)
+      activesupport
+      andand
+      bson_ext
+      mharris_ext
+      mongo
+      mongo_scope
     mongo_scope (0.0.5)
       mongo
-    multi_json (1.7.1)
+    multi_json (1.7.3)
     nokogiri (1.5.6)
+    nokogiri (1.5.6-java)
     pry (0.9.12)
       coderay (~> 1.0.5)
       method_source (~> 0.8)
@@ -128,7 +126,7 @@ DEPENDENCIES
   lre
   mharris_ext
   mongo
-  mongo_persist!
+  mongo_persist
   mongo_scope
   nokogiri
   rb-fsevent (~> 0.9)
