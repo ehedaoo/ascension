@@ -11,6 +11,24 @@ module Card
     def dummy
       Base.new(:name => "Dummy")
     end
+
+    def all_cards_hash
+      fields = %w(name realm honor image_url runes power rune_cost power_cost)
+      constants = [Card::Hero.mystic,Card::Hero.heavy_infantry,Card::Monster.cultist,Card::Hero.militia,Card::Hero.apprentice]
+      cards = Parse.cards + constants
+      all = cards.uniq_by { |x| x.name }.map do |card|
+        fields.inject({}) do |h,f|
+          card.respond_to?(f) ? h.merge(f => card.send(f)) : h
+        end
+      end
+      all
+    end
+    def card_places
+      {:game => Game.local_card_place_names, :side => Side.card_place_names}
+    end
+    def initial_card_info
+      {:cards => all_cards_hash, :places => card_places}.to_json
+    end
   end
 
   class Base
@@ -21,7 +39,10 @@ module Card
     attr_accessor :parent_side, :honor
 
     def addl_json_attributes
-      %w(image_url) 
+      []
+    end
+    def restricted_json_attributes
+      %w(realm honor)
     end
     def image_url
       (ImageMap.get(name) || "none").to_s
@@ -135,7 +156,9 @@ module Card
   
   class Purchaseable < Base
     setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :honor
-
+    def restricted_json_attributes
+      %w(realm honor runes power rune_cost)
+    end
 
 
     fattr(:runes) { 0 }
@@ -176,6 +199,9 @@ module Card
   
   class Construct < Purchaseable
     setup_mongo_persist :realm, :name, :runes, :power, :rune_cost, :card_id, :invoked_ability, :honor
+    def restricted_json_attributes
+      %w(realm honor runes power rune_cost)
+    end
     class << self
       def shadow_star
         new(:power => 1)
@@ -189,7 +215,7 @@ module Card
       invokable_abilities.any? { |a| !a.respond_to?("invokable?") || (parent_side && a.invokable?(parent_side)) } && !invoked_ability
     end
     def addl_json_attributes
-      ["has_invokable_ability",'image_url']
+      ["has_invokable_ability"]
     end
 
     def handle_event(event,side)
@@ -224,6 +250,9 @@ module Card
   class Monster < Base
     attr_accessor :power_cost
     setup_mongo_persist :realm, :name, :power_cost, :card_id
+    def restricted_json_attributes
+      %w(realm power_cost)
+    end
     fattr(:runes) { 0 }
     def engage_cost
       power_cost

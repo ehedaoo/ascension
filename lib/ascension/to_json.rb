@@ -32,7 +32,7 @@ module JsonPersist
       #obj = 
       #raise "#{attr} is nil" unless obj
       restricted.include?(attr.to_s) ? h : new_hash_json(attr,h,send(attr)) 
-    end.merge("_mongo_class" => self.class.to_s)
+    end
     klass.mongo_reference_attributes.each do |attr|
       val = send(attr)
       res[attr] = val.to_mongo_ref_hash if val && !restricted.include?(attr.to_s)
