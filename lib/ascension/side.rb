@@ -1,6 +1,39 @@
+module SideValues
+  def value_locations
+    {:honor => :honor, :runes => "played.pool.runes", :power => "played.pool.power", :cards => "hand.size", :hand => "hand", :constructs => "constructs"}
+  end
+  def smart_send(meth,*args)
+    res = self
+    parts = meth.split(".")
+    parts.each_with_index do |m,i|
+      last = (i == parts.length-1)
+      if last
+        res = res.send(m,*args)
+      else
+        res = res.send(m)
+      end
+    end
+    res
+  end
+  def smart_send_set(meth,val)
+    smart_send("#{meth}=",val)
+  end
+  def get_value(name)
+    place = value_locations[name.to_sym].to_s
+    raise "bad" if place.blank?
+    smart_send(place)
+  end
+  def set_value(name,val)
+    place = value_locations[name.to_sym].to_s
+    raise "bad" if place.blank?
+    smart_send_set(place,val)
+  end
+end
+
 class Side
   include FromHash
-  setup_mongo_persist :discard, :deck, :hand, :played, :constructs, :honor, :side_id, :choices, :ai, :turns, :events
+  include SideValues
+  setup_mongo_persist :discard, :deck, :hand, :played, :constructs, :honor, :side_id, :choices, :ai, :turns, :events, :trophies
   def addl_json_attributes
     %w(last_turn current_turn deck_honor)
   end
@@ -14,6 +47,7 @@ class Side
   fattr(:side_id) { rand(100000000000000) }
   fattr(:choices) { [] }
   fattr(:ability_tracker) { AbilityTracker.new(:side => self) }
+  fattr(:trophies) { Trophies.new(:side => self) }
 
   fattr(:turns) { [] }
   def current_turn
@@ -65,6 +99,10 @@ class Side
     played.pool.runes += monster.runes
     monster.apply_abilities(self)
     current_turn.engaged_cards << monster
+
+    if monster.trophy
+      self.trophies << monster
+    end
   end
   def engage(card)
     check_pending_choice!
@@ -131,14 +169,14 @@ class Side
 
 
   def self.card_place_names
-    [:hand,:discard,:deck,:played,:constructs]
+    [:hand,:discard,:deck,:played,:constructs,:trophies]
   end
   def card_places
     klass.card_place_names.map { |x| send(x) }
   end
 
   def after_mongo_load
-    %w(discard deck hand played constructs).each do |m|
+    %w(discard deck hand played constructs trophies).each do |m|
       send(m).side = self
     end
     choices.each do |c|

@@ -11,6 +11,7 @@ shared_context "game setup" do
   let(:hand_cards) { [] }
   let(:cards_to_play) { [] }
   let(:cards_to_engage) { [] }
+  let(:constructs) { [] }
 
   let(:pool_power) { 0 }
   let(:pool_runes) { 0 }
@@ -34,6 +35,11 @@ shared_context "game setup" do
     res.draw_hand!
     res.played.pool.power += pool_power
     res.played.pool.runes += pool_runes
+    constructs.each do |c|
+      c = Parse.get(c) if c.kind_of?(String)
+      res.constructs << c
+    end
+
     cards_to_play.each do |name|
       c = name.kind_of?(String) ? res.hand.find { |x| x.name == name } : name
       raise "no card #{name}" unless c
@@ -50,6 +56,7 @@ shared_context "game setup" do
   end
 
   let(:other_side) do
+    game; side;
     res = game.sides.last
     res.draw_hand!
     res
@@ -63,7 +70,7 @@ shared_context "game setup" do
   def get_card(card)
     return card unless card.kind_of?(String)
     game.card_places.each do |cards|
-      res = cards.find { |x| x.name == card }
+      res = cards.reverse.find { |x| x.name == card }
       return res if res
     end
     raise "no card found"
@@ -83,6 +90,16 @@ shared_context "game setup" do
   def play_card(name)
     card = side.hand.find { |x| x.name == name }
     side.play card
+  end
+
+  def play_trophy(name)
+    card = side.trophies.find { |x| x.name == name }
+    side.trophies.play(card)
+  end
+
+  def invoke_construct(name)
+    card = side.constructs.find { |x| x.name == name.to_s }
+    card.invoke_abilities(side)
   end
 
 end

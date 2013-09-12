@@ -38,6 +38,7 @@ Spork.prefork do
   RSpec.configure do |config|
     config.mock_with :rr
     #config.filter_run :focus => true
+    #config.fail_fast = true
   end
 end
 

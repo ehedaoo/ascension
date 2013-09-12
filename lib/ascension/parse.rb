@@ -52,9 +52,21 @@ module Parse
       new(ops)
     end
     fattr(:main) do
+      raise "trophy" if raw.to_s =~ /trophy/
       a = raw.split("-")
-      raise "invokable" if a[0] == 'invokable'
+      #raise "bad stuff #{raw}" if a.first == 'invokable'
       a.last
+    end
+    fattr(:modifier) do
+      a = raw.split("-")
+      if a.size == 1
+        nil
+      elsif a.first == 'invokable'
+        a.first
+      else
+        nil
+        #raise "unknown #{a.inspect}"
+      end
     end
     fattr(:word_blk) do
       Words.instance.words[main.to_s] || (raise "no block for #{raw}")
@@ -66,6 +78,9 @@ module Parse
       else
         word_blk[side,nil]
       end
+    end
+    def add_ability(card)
+      Phrase::Base.abilities_target(card,modifier) << word_blk
     end
   end
   
@@ -82,9 +97,10 @@ module Parse
       end
     end
     def self.parsed(raw)
-      raise "found other side" if raw =~ /other_side/
+      #raise "found other side" if raw =~ /other_side/
       cls = phrase_class(raw)
       raise "no phrase class for #{raw.inspect}" unless cls
+      #raise "#{cls} #{raw}" if raw.to_s =~ /trophy/
       cls.new(:raw => raw)
     end
     
@@ -94,11 +110,13 @@ module Parse
 
       fattr(:modifier) do
         a = raw.split("-")
-        if a.size > 1
+        res = if a.size > 1
           a.first
         else
           nil
         end
+        #raise 'other' if res == 'other_side'
+        res
       end
       fattr(:raw_no_modifier) do
         raw.split("-").last
@@ -124,8 +142,17 @@ module Parse
       def trigger; nil; end
       def ability; nil; end
 
+      def self.abilities_target(card,modifier)
+        if modifier == "invokable"
+          card.invokable_abilities
+        elsif modifier == 'fate'
+          card.fate_abilities
+        else
+          card.abilities
+        end
+      end
       def abilities_target(card)
-        (modifier == "invokable") ? card.invokable_abilities : card.abilities
+        klass.abilities_target(card,modifier)
       end
 
       def mod_card(card)
@@ -153,6 +180,48 @@ module Parse
       end
     end
 
+    class CompoundProc < Ability::BaseChoice
+      include FromHash
+      fattr(:abilities) { [] }
+      def choosable_cards(*args)
+        abilities.first.choosable_cards(*args)
+      end
+      def action_old(card,side)
+        #raise 'in compound proc action method'
+        abilities.first.action(card,side)
+        abilities[1..-1].each { |x| x.call(side) }
+      end
+      def action(card,side)
+        abilities.each do |a|
+          if ability_needs_choice?(a)
+            a.action(card,side)
+          else
+            a.call(side)
+          end
+        end
+      end
+      def call(*args)
+        #raise 'in compound proc call method'
+        abilities.each { |x| x.call(*args) }
+      end
+
+      def ability_needs_choice?(ability)
+        if ability.kind_of?(Proc)
+          #raise 'proc'
+          false
+        elsif ability.respond_to?("needs_choice?")
+          ability.needs_choice?
+        else
+          raise 'no method'
+        end
+      end
+      def needs_choice?
+        abilities.any? { |a| ability_needs_choice?(a) }
+      end
+
+
+    end
+
     class Compound < Base
       fattr(:two_raw_phrases) do
         raise "bad" unless raw =~ /\((.+?)\) (and|or) \((.+?)\)/
@@ -160,23 +229,28 @@ module Parse
       end
 
       fattr(:before_phrase) do
-        Phrase.parsed(two_raw_phrases[0])
+        Phrase.parsed(two_raw_phrases[0]).tap { |x| x.category = category }
       end
 
       fattr(:after_phrase) do
-        Phrase.parsed(two_raw_phrases[1])
+        Phrase.parsed(two_raw_phrases[1]).tap { |x| x.category = category }
       end
 
       fattr(:phrases) { [before_phrase,after_phrase] }
     end
 
     class And < Compound
-      fattr(:ability) do
+      fattr(:abilityx) do
         lambda do |side|
           phrases.each do |p|
             p.ability.call(side)
           end
         end
+      end
+      fattr(:ability) do
+        res = CompoundProc.new
+        res.abilities = phrases.map { |x| x.ability }
+        res
       end
     end
 
@@ -199,7 +273,11 @@ module Parse
               card.honor_earned = phrase.before_clause.to_i
             elsif phrase.category == :draw_cards
               phrase.abilities_target(card) << lambda do |side|
-                phrase.draw_cards(side)
+                if phrase.modifier == 'other_side'
+                  phrase.draw_cards(side.other_side)
+                else
+                  phrase.draw_cards(side)
+                end
               end
             elsif phrase.category.kind_of?(Class)
               phrase.abilities_target(card) << phrase.category.new(:optional => phrase.optional, :parent_card => card)
@@ -210,7 +288,16 @@ module Parse
         end
       end
       def mod_card(card)
-        self.class.basic_mod_card_proc[card,self]
+        if modifier == 'trophy'
+          trophy_card = ::Card::Hero.new
+          card.trophy = trophy_card
+          self.class.basic_mod_card_proc[trophy_card,self]
+        else
+          self.class.basic_mod_card_proc[card,self]
+        end
+      end
+      def modifier
+        super
       end
     end
 
@@ -232,6 +319,9 @@ module Parse
 
       def clone
         self.class.new(:cond => cond, :body => body, :unite => unite)
+      end
+      def reset!
+        self.body_count = 0
       end
     end
 
@@ -287,13 +377,17 @@ module Parse
       fattr(:ability) do
         if %w(runes power).include?(after_word.raw)
           lambda do |side|
-            val = side.played.pool.send(after_word.raw)
-            side.played.pool.send("#{after_word.raw}=",val+before_clause.to_i)
+            #val = side.played.pool.send(after_word.raw)
+            #side.played.pool.send("#{after_word.raw}=",val+before_clause.to_i)
+            side.played.pool.add before_clause.to_i,after_word.raw
           end
         elsif after_word.raw == "draw"
           lambda do |side|
             before_clause.to_i.times { side.draw_one! }
           end
+        elsif after_word.raw == 'this'
+          #raise "this is #{category}"
+          category.new(:optional => optional)
         else
           after_word.word_blk
         end
@@ -329,7 +423,7 @@ module Parse
     def mod_for_phrases(raw_cell, method_name_or_ability_class, card_to_setup)
       return unless raw_cell
       #puts [raw,cat,card_class,name].inspect
-      raw_cell.split(",").each do |raw_cell_part|
+      raw_cell.split(/[,;]/).each do |raw_cell_part|
         p = make_parsed_phrase_obj(raw_cell_part,method_name_or_ability_class)
         p.mod_card(card_to_setup) if p
       end
@@ -340,7 +434,7 @@ module Parse
       #raise "witch #{inspect}" if name == 'Flytrap Witch'
 
       #raise "#{name} #{honor_given}" if honor_given.to_i > 0
-      
+
       mod_for_phrases(runes, :runes, res)
       mod_for_phrases(honor_given,:add_honor,res)
       mod_for_phrases(power, :add_power, res)
@@ -354,7 +448,8 @@ module Parse
       
       if special_abilities
         word = Word.parsed(:raw => special_abilities)
-        res.abilities << word.word_blk
+        #res.abilities << word.word_blk
+        word.add_ability(res)
       end
       
       res.power_cost = power_cost.to_i if res.monster?
@@ -395,13 +490,15 @@ module Parse
     fattr(:raw_lines) do
       require 'csv'
       res = []
-      f = File.expand_path(File.dirname(__FILE__)) + "/cards.csv"
+      f = File.expand_path(File.dirname(__FILE__)) + "/cards_spaced.csv"
       CSV.foreach(f,:headers => true, :row_sep => "\n", :quote_char => '"') do |row|
         h = {}
         row.each do |k,v|
           #puts [k,v].inspect
           if k.present?
-            k = k.downcase.gsub(' ','_')
+            k = k.downcase.strip.gsub(' ','_')
+            v = v.strip if v
+            v = nil if v.blank?
             h[k] = v
           end
         end
@@ -463,6 +560,10 @@ Parse.reg_ability :acquire_center, Ability::AcquireCenter.new
 Parse.reg_ability :take_opponents_card, Ability::TakeOpponentsCard.new
 
 Parse.reg_ability :acquire_construct, Ability::AcquireConstruct.new
+
+Parse.reg_ability :return_mechana_construct_to_hand, Ability::ReturnMechanaConstructToHand.new
+
+Parse.reg_ability :guess_top_card_for_3, Ability::GuessTopCardFor3.new
 
 %w(power_or_rune_1 take_opponents_casrd acquire_centerx).each do |f|
   Parse.reg_ability f do |*args|

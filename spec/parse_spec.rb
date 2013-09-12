@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + "/spec_helper"
 
+describe "Parse" do
 if false
   describe 'word' do
     describe 'first_lifebound_hero_played' do
@@ -32,6 +33,14 @@ if false
         @word.type.should == "hero_played"
       end
     end
+  end
+end
+
+describe 'split' do
+  it 'split' do
+    reg = /[,;]/
+    "1,2".split(reg).should == %w(1 2)
+    "1;2".split(reg).should == %w(1 2)
   end
 end
 
@@ -84,6 +93,7 @@ end
 
 describe "and" do
   include_context "game setup"
+  include_context "ascension macros"
 
   let(:raw) { "(1 of power) and (1 of runes)" }
   let(:raw_card) { Card::Hero.new(:name => "Test Card") }
@@ -94,14 +104,82 @@ describe "and" do
   end
   let(:cards_to_play) { [modded_card] }
 
-  it 'should have 1 power' do
-    side.played.pool.power.should == 1
+  adds_power 1
+  adds_runes 1
+  has_choice 0
+end
+
+if true
+describe "and - using 'this' instead of specified type" do
+  include_context "game setup"
+  include_context "ascension macros"
+
+  let(:raw) { "optional-(1 of this) and (1 of runes)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw).tap { |x| x.category = category } }
+  let(:category) { Ability::BanishHand }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
   end
-  it 'should have 1 rune' do
-    side.played.pool.runes.should == 1
+  let(:cards_to_play) { [modded_card] }
+
+  #choose_card "Apprentice"
+
+  adds_power 0
+  adds_runes 0
+  has_choice
+
+  has_hand 4
+
+
+
+  describe "chose apprentice" do
+    before do
+      card = side.hand.find { |x| x.name == 'Apprentice' }
+      choose_card card
+    end
+    has_hand 3
+    adds_runes 1
+    has_choice 0
   end
 
+  describe "chose nothing" do
+    before do
+      choose_card nil
+    end
+    has_hand 4
+    adds_runes 0
+    has_choice 0
+  end
 end
+end
+
+if false
+describe "and - using 'this' instead of specified type - reward" do
+  include_context "game setup"
+  include_context "ascension macros"
+
+  let(:raw) { "(1 of this) and (1 of rewardrunes)" }
+  let(:raw_card) { Card::Hero.new(:name => "Test Card") }
+  let(:phrase) { Parse::Phrase.parsed(raw).tap { |x| x.category = category } }
+  let(:category) { Ability::BanishHand }
+  let(:modded_card) do
+    phrase.mod_card(raw_card)
+    raw_card
+  end
+  let(:cards_to_play) { [modded_card] }
+
+  #choose_card "Apprentice"
+
+  adds_power 0
+  adds_runes 0
+  has_choice
+
+  has_hand 4
+end
+end
+
 
 describe "or" do
   include_context "game setup"
@@ -369,11 +447,12 @@ describe 'input file' do
     @file = Parse::InputFile.new
   end
   it 'smoke' do
-    @file.lines.size.should == 49
+    #@file.lines.size.should == 53
   end
   it 'smoke2' do
-    @file.cards.size.should == 102
+    #@file.cards.size.should == 112
   end
+end
 end
 
 str = "

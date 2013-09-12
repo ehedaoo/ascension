@@ -9,8 +9,15 @@ class Cards
     cards << c
   end
   def remove(c)
-    raise "#{c} not here" unless cards.include?(c)
+    raise "remove arg is null" unless c
+    unless cards.include?(c)
+      cstr = map { |x| "#{x.name}:#{x.card_id}" }.join(",")
+      raise "#{c}:#{c.card_id} not here in #{klass}, do have #{cstr}"
+    end 
     self.cards -= [c]
+  rescue(BadCardEquals) => exp
+    res = "#{exp.message}, cards is #{inspect}"
+    raise res
   end
   def each(&b)
     cards.each(&b)
@@ -27,6 +34,9 @@ class Cards
   def first
     cards.first
   end
+  def last
+    cards.last
+  end
   def pop
     cards.pop
   end
@@ -38,6 +48,9 @@ class Cards
   end
   def include?(c)
     cards.include?(c)
+  rescue(BadCardEquals) => exp
+    res = "#{exp.message}, cards is #{inspect}"
+    raise res
   end
   def banish(card)
     remove(card)
@@ -60,6 +73,9 @@ class Cards
   end
   def hydrate!
     self.cards = map { |x| x.hydrated }
+  end
+  def reverse
+    cards.reverse
   end
 end
 
@@ -162,12 +178,23 @@ class Center < Cards
   def fill!
     (0...size).each do |i|
       if self[i].name == 'Dummy'
-        self[i] = game.deck.pop
+        card = game.deck.pop
+        handle_appear(card)
+        self[i] = card
       end
     end
 
     while size < 6
-      self << game.deck.pop
+      card = game.deck.pop
+      handle_appear(card)
+      self << card
+    end
+  end
+  def handle_appear(card)
+    card.fate_abilities.each do |ability|
+      game.sides.each do |side|
+        ability.call(side)
+      end
     end
   end
   def remove(c)
@@ -222,5 +249,14 @@ class Constructs < Cards
   def discard(card)
     remove(card)
     side.discard << card
+  end
+end
+
+class Trophies < Cards
+  def play(card)
+    raise "nil card" unless card
+    raise "trying to play trophy card that doesn't have a trophy, #{card.inspect}" unless card.trophy
+    remove(card)
+    side.played.apply(card.trophy)
   end
 end

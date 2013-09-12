@@ -1,3 +1,6 @@
+class BadCardEquals < RuntimeError
+end
+
 module Card
   module HonorEarned
     attr_accessor :honor_earned
@@ -13,7 +16,7 @@ module Card
     end
 
     def all_cards_hash
-      fields = %w(name realm honor image_url runes power rune_cost power_cost)
+      fields = %w(name realm honor image_url runes power rune_cost power_cost trophy)
       constants = [Card::Hero.mystic,Card::Hero.heavy_infantry,Card::Monster.cultist,Card::Hero.militia,Card::Hero.apprentice]
       cards = Parse.cards + constants
       all = cards.uniq_by { |x| x.name }.map do |card|
@@ -104,7 +107,7 @@ module Card
       return self if basic_card?
       parsed = Parse.get(name).clone
 
-      %w(abilities triggers invokable_abilities).each do |m|
+      %w(abilities triggers invokable_abilities trophy).each do |m|
         self.send("#{m}=",parsed.send(m)) if parsed.respond_to?(m)
       end
       #res.card_id = card_id
@@ -120,7 +123,10 @@ module Card
       res
     end
 
+    
+
     def ==(c)
+      raise BadCardEquals,"in ==, other card is nil, this card is #{inspect}" unless c
       card_id == c.card_id
     end
     def eql?(c)
@@ -150,6 +156,8 @@ module Card
         end
       end
     end
+
+    fattr(:fate_abilities) { [] }
 
 
   end
@@ -232,9 +240,19 @@ module Card
       @invoked_ability = val
     end
 
+    def save_choice_instance?(ability)
+      return false unless ability.respond_to?(:choice_instance)
+      return ability.needs_choice? if ability.respond_to?("needs_choice?")
+      false
+    end
+
     def invoke_abilities(side)
       invokable_abilities.each do |ability|
-        ability.call(side)
+        if !save_choice_instance?(ability)
+          ability.call(side)
+        else
+          ability.choice_instance(side).save!
+        end
       end
       self.invoked_ability = true
     end
@@ -248,7 +266,7 @@ module Card
   end
 
   class Monster < Base
-    attr_accessor :power_cost
+    attr_accessor :power_cost, :trophy
     setup_mongo_persist :realm, :name, :power_cost, :card_id
     def restricted_json_attributes
       %w(realm power_cost)

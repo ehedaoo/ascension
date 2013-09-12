@@ -37,7 +37,7 @@ class Game
   end
 
   def card_places
-    res = local_card_places + sides.map { |x| x.card_places }
+    res = sides.map { |x| x.card_places } + local_card_places
     res.flatten
   end
 

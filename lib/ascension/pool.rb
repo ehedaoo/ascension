@@ -46,4 +46,9 @@ class Pool
   def to_s
     "#{runes} (#{mechana_runes}) / #{power}"
   end
+
+  def add(num,type)
+    old = send(type)
+    send("#{type}=",num+old)
+  end
 end

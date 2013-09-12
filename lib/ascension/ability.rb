@@ -306,6 +306,35 @@ module Ability
     end
   end
 
+  class ReturnMechanaConstructToHand < BaseChoice
+    def choosable_cards(side)
+      side.constructs.select { |x| x.mechana? && x.name != 'Dream Machine' }
+    end
+    def action(card,side)
+      side.constructs.remove(card)
+      card.invoked_ability = false
+      card.triggers.each do |t|
+        t.reset! if t.respond_to?("reset!")
+      end
+      side.hand << card
+    end
+    def invokable?(side)
+      side.constructs.select { |x| x.mechana? }.size > 1
+    end
+  end
+
+  class GuessTopCardFor3 < BaseChoice
+    def choosable_cards(side)
+      side.card_places.map { |x| x.select { |x| x } }.flatten.uniq_by { |x| x.name }
+    end
+    def action(card,side)
+      if side.deck.last.name == card.name
+        side.gain_honor 3
+      end
+      side.draw_one!
+    end
+  end
+
   class ChooseAbility < BaseChoice
     def needs_choice?
       true
