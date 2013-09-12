@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Mike Harris"]
-  s.date = "2013-04-05"
+  s.date = "2013-09-12"
   s.description = "ascension"
   s.email = "mharris717@gmail.com"
   s.extra_rdoc_files = [
@@ -20,51 +20,83 @@ Gem::Specification.new do |s|
     ".document",
     ".lre",
     ".rspec",
+    ".sparkleshare",
+    ".travis.yml",
     "Gemfile",
     "Gemfile.lock",
     "Guardfile",
     "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
+    "SparkleShare.txt",
     "VERSION",
     "ascension.gemspec",
     "lib/ascension.rb",
     "lib/ascension/Ascension-statistics_v1.csv",
     "lib/ascension/ability.rb",
+    "lib/ascension/ability_tracker.rb",
+    "lib/ascension/ai/basic.rb",
+    "lib/ascension/ai_test.rb",
     "lib/ascension/card.rb",
     "lib/ascension/cards.csv",
     "lib/ascension/cards.rb",
     "lib/ascension/cards2.csv",
+    "lib/ascension/cards_spaced.csv",
+    "lib/ascension/debug.rb",
     "lib/ascension/events.rb",
+    "lib/ascension/ext.rb",
+    "lib/ascension/game.rb",
+    "lib/ascension/handle_choices.rb",
+    "lib/ascension/image_map.rb",
+    "lib/ascension/images.csv",
     "lib/ascension/parse.rb",
     "lib/ascension/pool.rb",
     "lib/ascension/run.rb",
+    "lib/ascension/setup.rb",
     "lib/ascension/setup_rchoice.rb",
+    "lib/ascension/side.rb",
     "lib/ascension/to_json.rb",
+    "lib/ascension/turn.rb",
     "lib/ascension/turn_manager.rb",
-    "notes.txt",
+    "spec/aaaaaaaa_spec.rb",
+    "spec/ai_spec.rb",
+    "spec/banish_reward_spec.rb",
     "spec/card_spec.rb",
     "spec/center_spec.rb",
     "spec/choice_instance_spec.rb",
+    "spec/debug_spec.rb",
+    "spec/fate_spec.rb",
+    "spec/game_spec.rb",
+    "spec/json_spec.rb",
     "spec/main_spec.rb",
     "spec/parse_spec.rb",
     "spec/spec_helper.rb",
+    "spec/support/ascension_macros.rb",
+    "spec/support/game_setup.rb",
+    "spec/support/should_run.rb",
+    "spec/trophy_spec.rb",
+    "spec/weird_mechana_spec.rb",
+    "vol/add_csv_spaces.rb",
     "vol/dmp.json",
     "vol/dmp2.json",
     "vol/find_by_id.rb",
     "vol/game.json",
     "vol/game_pp.json",
+    "vol/get_images.rb",
+    "vol/images.csv",
+    "vol/images.html",
+    "vol/list_processes.rb",
     "vol/test_persist.rb",
     "web/main.rb"
   ]
   s.homepage = "http://github.com/mharris717/ascension"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.23"
+  s.rubygems_version = "2.0.7"
   s.summary = "ascension"
 
   if s.respond_to? :specification_version then
-    s.specification_version = 3
+    s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<mharris_ext>, [">= 0"])
@@ -76,6 +108,8 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<mongo_scope>, [">= 0"])
       s.add_runtime_dependency(%q<mongo>, [">= 0"])
       s.add_runtime_dependency(%q<sinatra>, [">= 0"])
+      s.add_runtime_dependency(%q<nokogiri>, [">= 0"])
+      s.add_runtime_dependency(%q<google-search>, [">= 0"])
       s.add_development_dependency(%q<rspec>, ["~> 2.8.0"])
       s.add_development_dependency(%q<rdoc>, ["~> 3.12"])
       s.add_development_dependency(%q<bundler>, [">= 1.0.0"])
@@ -83,6 +117,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<guard>, [">= 0"])
       s.add_development_dependency(%q<guard-rspec>, [">= 0"])
       s.add_development_dependency(%q<guard-spork>, [">= 0"])
+      s.add_development_dependency(%q<rb-fsevent>, ["~> 0.9"])
       s.add_development_dependency(%q<lre>, [">= 0"])
       s.add_development_dependency(%q<rr>, [">= 0"])
     else
@@ -95,6 +130,8 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<mongo_scope>, [">= 0"])
       s.add_dependency(%q<mongo>, [">= 0"])
       s.add_dependency(%q<sinatra>, [">= 0"])
+      s.add_dependency(%q<nokogiri>, [">= 0"])
+      s.add_dependency(%q<google-search>, [">= 0"])
       s.add_dependency(%q<rspec>, ["~> 2.8.0"])
       s.add_dependency(%q<rdoc>, ["~> 3.12"])
       s.add_dependency(%q<bundler>, [">= 1.0.0"])
@@ -102,6 +139,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<guard>, [">= 0"])
       s.add_dependency(%q<guard-rspec>, [">= 0"])
       s.add_dependency(%q<guard-spork>, [">= 0"])
+      s.add_dependency(%q<rb-fsevent>, ["~> 0.9"])
       s.add_dependency(%q<lre>, [">= 0"])
       s.add_dependency(%q<rr>, [">= 0"])
     end
@@ -115,6 +153,8 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<mongo_scope>, [">= 0"])
     s.add_dependency(%q<mongo>, [">= 0"])
     s.add_dependency(%q<sinatra>, [">= 0"])
+    s.add_dependency(%q<nokogiri>, [">= 0"])
+    s.add_dependency(%q<google-search>, [">= 0"])
     s.add_dependency(%q<rspec>, ["~> 2.8.0"])
     s.add_dependency(%q<rdoc>, ["~> 3.12"])
     s.add_dependency(%q<bundler>, [">= 1.0.0"])
@@ -122,6 +162,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<guard>, [">= 0"])
     s.add_dependency(%q<guard-rspec>, [">= 0"])
     s.add_dependency(%q<guard-spork>, [">= 0"])
+    s.add_dependency(%q<rb-fsevent>, ["~> 0.9"])
     s.add_dependency(%q<lre>, [">= 0"])
     s.add_dependency(%q<rr>, [">= 0"])
   end
