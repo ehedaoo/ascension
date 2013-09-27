@@ -20,7 +20,7 @@ group :development do
 
   gem 'lre'
 
-  gem 'rr'
+  gem 'rr', require: false
 end
 
 gem 'mharris_ext'

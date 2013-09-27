@@ -85,7 +85,7 @@ GEM
     rdoc (3.12.2)
       json (~> 1.4)
     redis (3.0.4)
-    rr (1.0.4)
+    rr (1.1.2)
     rspec (2.8.0)
       rspec-core (~> 2.8.0)
       rspec-expectations (~> 2.8.0)
