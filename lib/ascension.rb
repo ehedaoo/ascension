@@ -13,8 +13,12 @@ module Ascension
       load File.dirname(__FILE__) + "/ascension/#{f}.rb"
     end
 
-    %w(debug handle_choices game turn side card cards ability pool events parse turn_manager setup_rchoice image_map).each do |f|
+    %w(debug parse setup_rchoice).each do |f|
       load File.dirname(__FILE__) + "/ascension/#{f}.rb"
+    end
+
+    %w(handle_choices game turn side card cards ability pool events turn_manager).each do |f|
+      load File.dirname(__FILE__) + "/ascension/game/#{f}.rb"
     end
 
     %w(basic).each do |f|
