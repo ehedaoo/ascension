@@ -17,7 +17,7 @@ class ImageMap
   fattr(:map) do
     require 'csv'
     res = {}
-    f = File.expand_path(File.dirname(__FILE__)) + "/images.csv"
+    f = File.expand_path(File.dirname(__FILE__)) + "/input/images.csv"
     CSV.foreach(f, :headers => true) do |row|
       res[row['name']] = row['url'].to_s if row['url'].to_s =~ /\.(png|jpg)/
     end

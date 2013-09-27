@@ -490,7 +490,7 @@ module Parse
     fattr(:raw_lines) do
       require 'csv'
       res = []
-      f = File.expand_path(File.dirname(__FILE__)) + "/cards_spaced.csv"
+      f = File.expand_path(File.dirname(__FILE__)) + "/input/cards_spaced.csv"
       CSV.foreach(f,:headers => true, :row_sep => "\n", :quote_char => '"') do |row|
         h = {}
         row.each do |k,v|
