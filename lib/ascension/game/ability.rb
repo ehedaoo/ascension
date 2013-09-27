@@ -10,7 +10,7 @@ module Ability
     include FromHash
     attr_accessor :choice, :side
 
-    setup_mongo_persist :choice, :choice_id
+    setup_mongo_persist :choice, :choice_id, :config_params
     def addl_json_attributes
       %w(choosable_cards name optional)
     end
@@ -22,6 +22,9 @@ module Ability
     end
 
     fattr(:choice_id) { rand(100000000000000) }
+    fattr(:config_params) do
+      choice.config_params
+    end
 
     fattr(:choosable_cards) do
       res = choice.choosable_cards(side)
@@ -87,6 +90,7 @@ module Ability
   end
   
   class BaseChoice < Base
+    fattr(:config_params) { {} }
     def side_for_card_choice(side)
       side
     end
@@ -351,6 +355,33 @@ module Ability
       else
         ability.call(side)
       end
+    end
+  end
+
+  class UpgradeHeroInHand < BaseChoice
+    def choosable_cards(side)
+      side.hand.select { |x| x }
+    end
+    def action(card,side)
+      side.hand.banish(card)
+      #side.hand << Card::Hero.mystic
+      side.apply_ability PickCenterHeroForHand.new(max_honor: (card.honor||0) + 2)
+    end
+  end
+
+  class PickCenterHeroForHand < BaseChoice
+    def max_honor=(h)
+      self.config_params[:max_honor] = h
+    end
+    def max_honor
+      config_params[:max_honor]
+    end
+    def choosable_cards(side)
+      side.game.center_wc.select { |x| x.hero? && x.honor <= max_honor }
+    end
+    def action(card,side)
+      side.game.center.remove(card) unless card.basic_card?
+      side.hand << card
     end
   end
 end

@@ -198,6 +198,18 @@ class Side
     end.flatten.map { |x| x || 0 }.sum
   end
 
+  def apply_ability(a)
+    if playing_on_command_line?
+      a.call(self)
+    else
+      if a.respond_to?(:choice_instance)
+        a.choice_instance(self).save!
+      else
+        a.call(self)
+      end
+    end
+  end
+
   class << self
     def ai(ops)
       res = new(ops)

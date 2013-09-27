@@ -131,6 +131,84 @@ describe "playing arbiter" do
   end
 end
 
+if true
+describe "playing raj" do
+  include_context "game setup"
+  include_context "ascension macros"
+
+  let(:hand_cards) { ["Raj",'Apprentice','Apprentice','Militia','Mystic'] }
+  let(:cards_to_play) { ["Raj"] }
+
+  let(:center_cards) do
+    ['Lifeblood Initiate','Spike Vixen','Lionheart','Shadow Star','Hedron Cannon','The All Seeing Eye']
+  end
+
+  it 'foo' do
+    #raise side.hand.map { |x| x.to_s }.inspect
+  end
+
+  it 'has choice' do
+    side.choices.size.should == 1
+  end
+
+  it 'choice cards' do
+    choice.choosable_cards.size.should == 4
+  end
+
+  it "chosing nil errors" do
+    lambda { choose_card nil }.should raise_error
+  end
+
+  with_choice 'Apprentice','side.hand' do
+    it 'hand has 3 cards' do
+      side.hand.size.should == 3
+    end
+
+    it 'has choice' do
+      side.choices.size.should == 1
+    end
+
+    it 'choice cards' do
+      choice.choosable_cards.map { |x| x.name }.sort.should == ['Lifeblood Initiate','Spike Vixen','Mystic','Heavy Infantry'].sort
+    end
+
+    with_choice 'Spike Vixen' do
+      it 'hand has 4 cards' do
+        side.hand.size.should == 4
+      end
+
+      it 'has new card' do
+        side.hand.select { |x| x.name == 'Spike Vixen' }.size.should == 1
+      end
+    end
+
+    with_choice 'Mystic' do
+      it 'hand has 4 cards' do
+        side.hand.size.should == 4
+      end
+
+      it 'has new card' do
+        side.hand.select { |x| x.name == 'Mystic' }.size.should == 2
+      end
+    end
+  end
+
+  with_choice 'Mystic','side.hand' do
+    it 'hand has 3 cards' do
+      side.hand.size.should == 3
+    end
+
+    it 'has choice' do
+      side.choices.size.should == 1
+    end
+
+    it 'choice cards' do
+      choice.choosable_cards.map { |x| x.name }.sort.should == ['Lifeblood Initiate','Spike Vixen','Mystic','Heavy Infantry','Lionheart'].sort
+    end
+  end
+end
+end
+
 describe "playing burrower" do
   include_context "game setup"
 

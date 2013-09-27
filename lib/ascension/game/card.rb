@@ -32,6 +32,12 @@ module Card
     def initial_card_info
       {:cards => all_cards_hash, :places => card_places}.to_json
     end
+    def basic_card_names
+      ["Heavy Infantry","Mystic","Cultist","Apprentice","Militia","Standin"]
+    end
+    def basic?(card)
+      basic_card_names.include?(card)
+    end
   end
 
   class Base
@@ -71,20 +77,9 @@ module Card
       abilities = self.abilities
       abilities = abilities.reverse if name == 'Temple Librarian'
 
-      if playing_on_command_line?
-        abilities.each { |a| a.call(side) }
-      else
-        abilities.each do |a|
-          if a.respond_to?(:choice_instance)
-            a.choice_instance(side).save!
-          else
-            #raise a.inspect
-            a.call(side)
-          end
-        end
+      abilities.each do |a|
+        side.apply_ability(a)
       end
-
-      
     end
     def apply_triggers(event, side)
       triggers.each { |a| a.call(event, side) }
@@ -100,7 +95,7 @@ module Card
     end
 
     def basic_card?
-      ["Heavy Infantry","Mystic","Cultist","Apprentice","Militia","Standin"].include?(name)
+      Card.basic_card_names.include?(name)
     end
 
     def hydrated
@@ -201,6 +196,10 @@ module Card
         new(:rune_cost => 1, :name => "Arha Initiate", :honor => 1).tap do |h|
           h.abilities << Ability::Draw.new
         end
+      end
+      def get_basic(card)
+        card = card.downcase.gsub(" ","_")
+        send(card)
       end
     end
   end

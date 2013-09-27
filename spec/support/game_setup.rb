@@ -28,7 +28,13 @@ shared_context "game setup" do
   let(:side) do
     res = game.sides.first
     (hand_cards + cards_to_play).uniq.each do |c| 
-      c = Parse.get(c) if c.kind_of?(String)
+      if c.kind_of?(String)
+        if Card.basic?(c)
+          c = Card::Hero.get_basic(c)
+        else
+          c = Parse.get(c)
+        end
+      end
       res.deck << c
       raise "bad" if c.triggers.any? { |t| t.respond_to?(:body_count) && t.body_count > 0 }
     end
@@ -73,11 +79,21 @@ shared_context "game setup" do
       res = cards.reverse.find { |x| x.name == card }
       return res if res
     end
+    ['Mystic','Heavy Infantry'].each do |basic|
+      return Card::Hero.send(basic.downcase.gsub(" ","_")) if card == basic
+    end
     raise "no card found"
   end
 
-  def choose_card(card,other=false)
-    card = get_card(card)
+  def choose_card(card,*args)
+    other = false
+    other = true if args.include?(true)
+    place = args.find { |x| x.kind_of?(String) }
+    if place
+      card = instance_eval(place).find { |x| x.name == card }
+    else
+      card = get_card(card)
+    end
     (other ? side.other_side.choices.first : side.choices.first).execute! card
   end
 

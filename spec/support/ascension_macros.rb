@@ -140,9 +140,10 @@ def describe_construct_invoked(card, ops={},&b)
   end
 end
 
-def with_choice(card,&b)
+def with_choice(card,*args,&b)
   describe "with choice #{card}" do
-    choose_card card
+    #card = place.find { |x| x.name == card } if place
+    choose_card card,*args
     instance_eval(&b)
   end
 end

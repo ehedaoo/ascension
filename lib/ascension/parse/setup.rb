@@ -45,6 +45,8 @@ Parse.reg_ability :return_mechana_construct_to_hand, Ability::ReturnMechanaConst
 
 Parse.reg_ability :guess_top_card_for_3, Ability::GuessTopCardFor3.new
 
+Parse.reg_ability :upgrade_hero_in_hand, Ability::UpgradeHeroInHand.new
+
 %w(power_or_rune_1 take_opponents_casrd acquire_centerx).each do |f|
   Parse.reg_ability f do |*args|
   end
