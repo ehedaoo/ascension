@@ -136,8 +136,8 @@ describe "playing raj" do
   include_context "game setup"
   include_context "ascension macros"
 
-  let(:hand_cards) { ["Raj",'Apprentice','Apprentice','Militia','Mystic'] }
-  let(:cards_to_play) { ["Raj"] }
+  let(:hand_cards) { ["Raj the Psionic Master",'Apprentice','Apprentice','Militia','Mystic'] }
+  let(:cards_to_play) { ["Raj the Psionic Master"] }
 
   let(:center_cards) do
     ['Lifeblood Initiate','Spike Vixen','Lionheart','Shadow Star','Hedron Cannon','The All Seeing Eye']

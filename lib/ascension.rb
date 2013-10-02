@@ -17,7 +17,7 @@ module Ascension
       load File.dirname(__FILE__) + "/ascension/game/#{f}.rb"
     end
 
-    %w(debug parse setup_rchoice).each do |f|
+    %w(debug parse setup_rchoice image_map).each do |f|
       load File.dirname(__FILE__) + "/ascension/#{f}.rb"
     end
 

@@ -197,6 +197,9 @@ module Card
           h.abilities << Ability::Draw.new
         end
       end
+      def basic_cards
+        [apprentice,mystic,militia,heavy_infantry]
+      end
       def get_basic(card)
         card = card.downcase.gsub(" ","_")
         send(card)
